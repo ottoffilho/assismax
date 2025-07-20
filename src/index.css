@@ -2,39 +2,75 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* AssisMax Atacarejo Design System */
 
 @layer base {
   :root {
+    /* Core Brand Colors */
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 215 25% 15%;
 
+    /* Card System */
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 215 25% 15%;
 
+    /* Popover System */
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 215 25% 15%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Primary Brand - Professional Blue */
+    --primary: 214 84% 56%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 214 84% 50%;
+    --primary-light: 214 84% 96%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Secondary Brand - Growth Green */
+    --secondary: 142 72% 29%;
+    --secondary-foreground: 0 0% 100%;
+    --secondary-hover: 142 72% 25%;
+    --secondary-light: 142 72% 95%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Accent - Conversion Orange */
+    --accent: 24 95% 55%;
+    --accent-foreground: 0 0% 100%;
+    --accent-hover: 24 95% 50%;
+    --accent-light: 24 95% 96%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Neutral System */
+    --muted: 215 15% 97%;
+    --muted-foreground: 215 15% 45%;
+    --muted-hover: 215 15% 92%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* Status Colors */
+    --success: 142 72% 29%;
+    --success-foreground: 0 0% 100%;
+    --warning: 45 93% 47%;
+    --warning-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    /* Border System */
+    --border: 215 15% 90%;
+    --input: 215 15% 88%;
+    --ring: 214 84% 56%;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-hover)) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)) 0%, hsl(var(--secondary-hover)) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(var(--accent)) 0%, hsl(var(--accent-hover)) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(var(--card)) 0%, hsl(var(--muted)) 100%);
+
+    /* Shadows */
+    --shadow-soft: 0 2px 8px hsl(var(--primary) / 0.1);
+    --shadow-medium: 0 4px 16px hsl(var(--primary) / 0.15);
+    --shadow-strong: 0 8px 32px hsl(var(--primary) / 0.2);
+    --shadow-glow: 0 0 24px hsl(var(--accent) / 0.3);
+
+    /* Animations */
+    --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 
     --radius: 0.5rem;
 
@@ -56,33 +92,53 @@ All colors MUST be HSL.
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    /* Core Colors */
+    --background: 215 25% 8%;
+    --foreground: 215 15% 95%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    /* Card System */
+    --card: 215 25% 10%;
+    --card-foreground: 215 15% 95%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    /* Popover System */
+    --popover: 215 25% 10%;
+    --popover-foreground: 215 15% 95%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    /* Primary Brand - Adjusted for dark mode */
+    --primary: 214 84% 65%;
+    --primary-foreground: 215 25% 8%;
+    --primary-hover: 214 84% 70%;
+    --primary-light: 214 84% 15%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    /* Secondary Brand - Adjusted for dark mode */
+    --secondary: 142 72% 40%;
+    --secondary-foreground: 215 25% 8%;
+    --secondary-hover: 142 72% 45%;
+    --secondary-light: 142 72% 12%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    /* Accent - Adjusted for dark mode */
+    --accent: 24 95% 60%;
+    --accent-foreground: 215 25% 8%;
+    --accent-hover: 24 95% 65%;
+    --accent-light: 24 95% 12%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    /* Neutral System */
+    --muted: 215 15% 15%;
+    --muted-foreground: 215 15% 60%;
+    --muted-hover: 215 15% 20%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    /* Status Colors */
+    --success: 142 72% 40%;
+    --success-foreground: 215 25% 8%;
+    --warning: 45 93% 55%;
+    --warning-foreground: 215 25% 8%;
+    --destructive: 0 84% 65%;
+    --destructive-foreground: 215 25% 8%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    /* Border System */
+    --border: 215 15% 20%;
+    --input: 215 15% 18%;
+    --ring: 214 84% 65%;
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -101,5 +157,56 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer components {
+  /* Hero Buttons */
+  .btn-hero {
+    @apply bg-gradient-primary text-primary-foreground px-8 py-4 rounded-lg font-semibold text-lg shadow-medium hover:shadow-strong transition-all duration-300 hover:scale-105;
+  }
+
+  .btn-hero-secondary {
+    @apply bg-gradient-secondary text-secondary-foreground px-8 py-4 rounded-lg font-semibold text-lg shadow-medium hover:shadow-strong transition-all duration-300 hover:scale-105;
+  }
+
+  .btn-accent {
+    @apply bg-gradient-accent text-accent-foreground px-6 py-3 rounded-lg font-medium shadow-soft hover:shadow-glow transition-all duration-300 hover:scale-105;
+  }
+
+  /* Cards */
+  .card-floating {
+    @apply bg-card border border-border rounded-xl shadow-soft hover:shadow-medium transition-all duration-300 hover:-translate-y-1;
+  }
+
+  .card-product {
+    @apply bg-gradient-card border border-border rounded-xl p-6 shadow-medium hover:shadow-strong transition-all duration-300 hover:scale-105;
+  }
+
+  /* Text Effects */
+  .text-gradient-primary {
+    @apply bg-gradient-to-r from-primary to-primary-hover bg-clip-text text-transparent;
+  }
+
+  .text-gradient-hero {
+    @apply bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent;
+  }
+
+  /* Interactive Elements */
+  .hover-lift {
+    @apply transition-transform duration-300 hover:-translate-y-2 hover:shadow-strong;
+  }
+
+  .hover-glow {
+    @apply transition-all duration-300 hover:shadow-glow;
+  }
+
+  /* Layout */
+  .section-padding {
+    @apply py-16 px-4 sm:px-6 lg:px-8;
+  }
+
+  .container-responsive {
+    @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
   }
 }
