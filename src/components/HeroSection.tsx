@@ -30,11 +30,11 @@ export default function HeroSection({ onOpenModal }: HeroSectionProps) {
           </div>
 
           {/* Logo */}
-          <div className="flex justify-center mb-8 animate-fade-in-up">
+          <div className="flex justify-center mb-4 animate-fade-in-up">
             <img 
               src="/lovable-uploads/ffc3c5d5-3865-4497-aea9-6104400c0994.png" 
               alt="AssisMax Atacarejo" 
-              className="h-40 md:h-52 lg:h-64 w-auto"
+              className="h-52 md:h-64 lg:h-80 w-auto"
             />
           </div>
 
