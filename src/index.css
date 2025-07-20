@@ -6,66 +6,66 @@
 
 @layer base {
   :root {
-    /* Core Brand Colors */
+    /* Core Brand Colors - AssisMax Identity */
     --background: 0 0% 100%;
-    --foreground: 215 25% 15%;
+    --foreground: 0 0% 8%;
 
     /* Card System */
     --card: 0 0% 100%;
-    --card-foreground: 215 25% 15%;
+    --card-foreground: 0 0% 8%;
 
     /* Popover System */
     --popover: 0 0% 100%;
-    --popover-foreground: 215 25% 15%;
+    --popover-foreground: 0 0% 8%;
 
-    /* Primary Brand - Professional Blue */
-    --primary: 214 84% 56%;
+    /* Primary Brand - AssisMax Black */
+    --primary: 0 0% 8%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 214 84% 50%;
-    --primary-light: 214 84% 96%;
+    --primary-hover: 0 0% 15%;
+    --primary-light: 0 0% 98%;
 
-    /* Secondary Brand - Growth Green */
-    --secondary: 142 72% 29%;
+    /* Secondary Brand - Neutral Gray */
+    --secondary: 0 0% 20%;
     --secondary-foreground: 0 0% 100%;
-    --secondary-hover: 142 72% 25%;
-    --secondary-light: 142 72% 95%;
+    --secondary-hover: 0 0% 30%;
+    --secondary-light: 0 0% 96%;
 
-    /* Accent - Conversion Orange */
-    --accent: 24 95% 55%;
-    --accent-foreground: 0 0% 100%;
-    --accent-hover: 24 95% 50%;
-    --accent-light: 24 95% 96%;
+    /* Accent - AssisMax Yellow */
+    --accent: 51 100% 59%;
+    --accent-foreground: 0 0% 8%;
+    --accent-hover: 51 100% 54%;
+    --accent-light: 51 100% 96%;
 
     /* Neutral System */
-    --muted: 215 15% 97%;
-    --muted-foreground: 215 15% 45%;
-    --muted-hover: 215 15% 92%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+    --muted-hover: 0 0% 92%;
 
     /* Status Colors */
-    --success: 142 72% 29%;
+    --success: 120 100% 25%;
     --success-foreground: 0 0% 100%;
-    --warning: 45 93% 47%;
-    --warning-foreground: 0 0% 100%;
+    --warning: 51 100% 59%;
+    --warning-foreground: 0 0% 8%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
     /* Border System */
-    --border: 215 15% 90%;
-    --input: 215 15% 88%;
-    --ring: 214 84% 56%;
+    --border: 0 0% 90%;
+    --input: 0 0% 88%;
+    --ring: 51 100% 59%;
 
-    /* Gradients */
+    /* Gradients - AssisMax Style */
     --gradient-primary: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-hover)) 100%);
     --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)) 0%, hsl(var(--secondary-hover)) 100%);
     --gradient-accent: linear-gradient(135deg, hsl(var(--accent)) 0%, hsl(var(--accent-hover)) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%);
     --gradient-card: linear-gradient(145deg, hsl(var(--card)) 0%, hsl(var(--muted)) 100%);
 
-    /* Shadows */
-    --shadow-soft: 0 2px 8px hsl(var(--primary) / 0.1);
-    --shadow-medium: 0 4px 16px hsl(var(--primary) / 0.15);
-    --shadow-strong: 0 8px 32px hsl(var(--primary) / 0.2);
-    --shadow-glow: 0 0 24px hsl(var(--accent) / 0.3);
+    /* Shadows - Yellow Accent */
+    --shadow-soft: 0 2px 8px hsl(0 0% 8% / 0.1);
+    --shadow-medium: 0 4px 16px hsl(0 0% 8% / 0.15);
+    --shadow-strong: 0 8px 32px hsl(0 0% 8% / 0.2);
+    --shadow-glow: 0 0 24px hsl(var(--accent) / 0.4);
 
     /* Animations */
     --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
@@ -92,53 +92,53 @@
   }
 
   .dark {
-    /* Core Colors */
-    --background: 215 25% 8%;
-    --foreground: 215 15% 95%;
+    /* Core Colors - AssisMax Dark Mode */
+    --background: 0 0% 8%;
+    --foreground: 0 0% 95%;
 
     /* Card System */
-    --card: 215 25% 10%;
-    --card-foreground: 215 15% 95%;
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 95%;
 
     /* Popover System */
-    --popover: 215 25% 10%;
-    --popover-foreground: 215 15% 95%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 95%;
 
-    /* Primary Brand - Adjusted for dark mode */
-    --primary: 214 84% 65%;
-    --primary-foreground: 215 25% 8%;
-    --primary-hover: 214 84% 70%;
-    --primary-light: 214 84% 15%;
+    /* Primary Brand - Dark Mode */
+    --primary: 0 0% 95%;
+    --primary-foreground: 0 0% 8%;
+    --primary-hover: 0 0% 85%;
+    --primary-light: 0 0% 15%;
 
-    /* Secondary Brand - Adjusted for dark mode */
-    --secondary: 142 72% 40%;
-    --secondary-foreground: 215 25% 8%;
-    --secondary-hover: 142 72% 45%;
-    --secondary-light: 142 72% 12%;
+    /* Secondary Brand - Dark Mode */
+    --secondary: 0 0% 70%;
+    --secondary-foreground: 0 0% 8%;
+    --secondary-hover: 0 0% 80%;
+    --secondary-light: 0 0% 12%;
 
-    /* Accent - Adjusted for dark mode */
-    --accent: 24 95% 60%;
-    --accent-foreground: 215 25% 8%;
-    --accent-hover: 24 95% 65%;
-    --accent-light: 24 95% 12%;
+    /* Accent - AssisMax Yellow Dark Mode */
+    --accent: 51 100% 64%;
+    --accent-foreground: 0 0% 8%;
+    --accent-hover: 51 100% 69%;
+    --accent-light: 51 100% 12%;
 
     /* Neutral System */
-    --muted: 215 15% 15%;
-    --muted-foreground: 215 15% 60%;
-    --muted-hover: 215 15% 20%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 60%;
+    --muted-hover: 0 0% 20%;
 
     /* Status Colors */
-    --success: 142 72% 40%;
-    --success-foreground: 215 25% 8%;
-    --warning: 45 93% 55%;
-    --warning-foreground: 215 25% 8%;
+    --success: 120 100% 30%;
+    --success-foreground: 0 0% 8%;
+    --warning: 51 100% 64%;
+    --warning-foreground: 0 0% 8%;
     --destructive: 0 84% 65%;
-    --destructive-foreground: 215 25% 8%;
+    --destructive-foreground: 0 0% 8%;
 
     /* Border System */
-    --border: 215 15% 20%;
-    --input: 215 15% 18%;
-    --ring: 214 84% 65%;
+    --border: 0 0% 20%;
+    --input: 0 0% 18%;
+    --ring: 51 100% 64%;
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
