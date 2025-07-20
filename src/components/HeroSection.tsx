@@ -29,13 +29,14 @@ export default function HeroSection({ onOpenModal }: HeroSectionProps) {
             <span className="text-sm font-medium">Valparaíso de Goiás, GO</span>
           </div>
 
-          {/* Main Heading */}
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 animate-fade-in-up">
-            <span className="block">AssisMax</span>
-            <span className="block text-gradient-hero bg-gradient-to-r from-white via-accent-light to-secondary-light bg-clip-text text-transparent">
-              Atacarejo
-            </span>
-          </h1>
+          {/* Logo */}
+          <div className="flex justify-center mb-6 animate-fade-in-up">
+            <img 
+              src="/lovable-uploads/74e2344f-a496-4af3-a1cc-81c0db3c2e3e.png" 
+              alt="AssisMax Atacarejo" 
+              className="h-32 md:h-40 lg:h-48 w-auto"
+            />
+          </div>
 
           {/* Subtitle */}
           <p className="text-xl md:text-2xl lg:text-3xl mb-8 font-light leading-relaxed animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
