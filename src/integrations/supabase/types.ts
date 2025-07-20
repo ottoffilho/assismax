@@ -14,10 +14,438 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      audit_logs: {
+        Row: {
+          dados_antigos: Json | null
+          dados_novos: Json | null
+          id: string
+          id_registro: string
+          ip_address: unknown | null
+          nome_tabela: string
+          operacao: string
+          timestamp: string | null
+          user_agent: string | null
+          usuario_id: string | null
+        }
+        Insert: {
+          dados_antigos?: Json | null
+          dados_novos?: Json | null
+          id?: string
+          id_registro: string
+          ip_address?: unknown | null
+          nome_tabela: string
+          operacao: string
+          timestamp?: string | null
+          user_agent?: string | null
+          usuario_id?: string | null
+        }
+        Update: {
+          dados_antigos?: Json | null
+          dados_novos?: Json | null
+          id?: string
+          id_registro?: string
+          ip_address?: unknown | null
+          nome_tabela?: string
+          operacao?: string
+          timestamp?: string | null
+          user_agent?: string | null
+          usuario_id?: string | null
+        }
+        Relationships: []
+      }
+      consentimentos: {
+        Row: {
+          aceite_marketing: boolean
+          aceite_termos: boolean
+          aceite_whatsapp: boolean
+          id: string
+          ip_origem: unknown | null
+          lead_id: string | null
+          politica_versao: string | null
+          timestamp: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          aceite_marketing?: boolean
+          aceite_termos: boolean
+          aceite_whatsapp?: boolean
+          id?: string
+          ip_origem?: unknown | null
+          lead_id?: string | null
+          politica_versao?: string | null
+          timestamp?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          aceite_marketing?: boolean
+          aceite_termos?: boolean
+          aceite_whatsapp?: boolean
+          id?: string
+          ip_origem?: unknown | null
+          lead_id?: string | null
+          politica_versao?: string | null
+          timestamp?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consentimentos_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversas: {
+        Row: {
+          canal: string
+          funcionario_id: string | null
+          id: string
+          lead_id: string | null
+          lida: boolean | null
+          mensagem: string
+          metadata: Json | null
+          timestamp: string | null
+          tipo: string
+        }
+        Insert: {
+          canal: string
+          funcionario_id?: string | null
+          id?: string
+          lead_id?: string | null
+          lida?: boolean | null
+          mensagem: string
+          metadata?: Json | null
+          timestamp?: string | null
+          tipo: string
+        }
+        Update: {
+          canal?: string
+          funcionario_id?: string | null
+          id?: string
+          lead_id?: string | null
+          lida?: boolean | null
+          mensagem?: string
+          metadata?: Json | null
+          timestamp?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversas_funcionario_id_fkey"
+            columns: ["funcionario_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversas_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversas_ia: {
+        Row: {
+          contexto: Json | null
+          id: string
+          lead_id: string | null
+          mensagem: string
+          resposta: string
+          timestamp: string | null
+        }
+        Insert: {
+          contexto?: Json | null
+          id?: string
+          lead_id?: string | null
+          mensagem: string
+          resposta: string
+          timestamp?: string | null
+        }
+        Update: {
+          contexto?: Json | null
+          id?: string
+          lead_id?: string | null
+          mensagem?: string
+          resposta?: string
+          timestamp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversas_ia_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      empresas: {
+        Row: {
+          ativo: boolean | null
+          configuracoes: Json | null
+          created_at: string | null
+          email: string | null
+          endereco: string | null
+          id: string
+          nome: string
+          plano: string | null
+          slug: string
+          telefone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          configuracoes?: Json | null
+          created_at?: string | null
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          nome: string
+          plano?: string | null
+          slug: string
+          telefone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          configuracoes?: Json | null
+          created_at?: string | null
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          nome?: string
+          plano?: string | null
+          slug?: string
+          telefone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      funcionarios: {
+        Row: {
+          ativo: boolean | null
+          configuracoes: Json | null
+          created_at: string | null
+          email: string
+          empresa_id: string | null
+          id: string
+          nivel_acesso: string | null
+          nome: string
+          telefone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          configuracoes?: Json | null
+          created_at?: string | null
+          email: string
+          empresa_id?: string | null
+          id?: string
+          nivel_acesso?: string | null
+          nome: string
+          telefone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          configuracoes?: Json | null
+          created_at?: string | null
+          email?: string
+          empresa_id?: string | null
+          id?: string
+          nivel_acesso?: string | null
+          nome?: string
+          telefone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "funcionarios_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads: {
+        Row: {
+          created_at: string | null
+          dados_adicionais: Json | null
+          email: string
+          empresa_id: string | null
+          funcionario_id: string | null
+          id: string
+          nome: string
+          observacoes: string | null
+          origem: string | null
+          status: string | null
+          telefone: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          dados_adicionais?: Json | null
+          email: string
+          empresa_id?: string | null
+          funcionario_id?: string | null
+          id?: string
+          nome: string
+          observacoes?: string | null
+          origem?: string | null
+          status?: string | null
+          telefone: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          dados_adicionais?: Json | null
+          email?: string
+          empresa_id?: string | null
+          funcionario_id?: string | null
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          origem?: string | null
+          status?: string | null
+          telefone?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_funcionario_id_fkey"
+            columns: ["funcionario_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      metricas: {
+        Row: {
+          data: string | null
+          empresa_id: string | null
+          id: string
+          metadata: Json | null
+          timestamp: string | null
+          tipo: string
+          valor: number | null
+        }
+        Insert: {
+          data?: string | null
+          empresa_id?: string | null
+          id?: string
+          metadata?: Json | null
+          timestamp?: string | null
+          tipo: string
+          valor?: number | null
+        }
+        Update: {
+          data?: string | null
+          empresa_id?: string | null
+          id?: string
+          metadata?: Json | null
+          timestamp?: string | null
+          tipo?: string
+          valor?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "metricas_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      produtos: {
+        Row: {
+          ativo: boolean | null
+          categoria: string
+          created_at: string | null
+          descricao: string | null
+          empresa_id: string | null
+          estoque: number | null
+          id: string
+          imagem_url: string | null
+          nome: string
+          preco_atacado: number | null
+          preco_varejo: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          categoria: string
+          created_at?: string | null
+          descricao?: string | null
+          empresa_id?: string | null
+          estoque?: number | null
+          id?: string
+          imagem_url?: string | null
+          nome: string
+          preco_atacado?: number | null
+          preco_varejo?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          categoria?: string
+          created_at?: string | null
+          descricao?: string | null
+          empresa_id?: string | null
+          estoque?: number | null
+          id?: string
+          imagem_url?: string | null
+          nome?: string
+          preco_atacado?: number | null
+          preco_varejo?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "produtos_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
-      [_ in never]: never
+      dashboard_proprietario: {
+        Row: {
+          empresa: string | null
+          leads_convertidos: number | null
+          leads_em_atendimento: number | null
+          leads_hoje: number | null
+          leads_novos: number | null
+          leads_semana: number | null
+          total_leads: number | null
+        }
+        Relationships: []
+      }
+      performance_funcionarios: {
+        Row: {
+          funcionario: string | null
+          leads_atribuidos: number | null
+          leads_convertidos: number | null
+          taxa_conversao: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never
