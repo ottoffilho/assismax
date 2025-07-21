@@ -4,33 +4,35 @@ import ProductShowcase from "@/components/ProductShowcase";
 import StatsSection from "@/components/StatsSection";
 import Footer from "@/components/Footer";
 import LeadCaptureModal from "@/components/LeadCaptureModal";
-import FloatingCTA from "@/components/FloatingCTA";
+import ChatbotModal from "@/components/ChatbotModal";
 
 const Index = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
+  const openChat = () => setIsChatOpen(true);
 
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <HeroSection onOpenModal={openModal} />
-      
+      <HeroSection onOpenModal={openModal} onOpenChat={openChat} />
+
       {/* Product Showcase */}
       <ProductShowcase onOpenModal={openModal} />
-      
+
       {/* Stats Section */}
       <StatsSection />
-      
+
       {/* Footer */}
       <Footer onOpenModal={openModal} />
-      
+
       {/* Lead Capture Modal */}
       <LeadCaptureModal isOpen={isModalOpen} onClose={closeModal} />
-      
-      {/* Floating CTA */}
-      <FloatingCTA onOpenModal={openModal} />
+
+      {/* Chatbot Modal */}
+      <ChatbotModal open={isChatOpen} onOpenChange={setIsChatOpen} />
     </div>
   );
 };
