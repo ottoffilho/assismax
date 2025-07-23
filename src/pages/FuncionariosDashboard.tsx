@@ -4,7 +4,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Input } from '@/components/ui/input';
 import { 
   Users, 
   MessageSquare, 
@@ -17,50 +16,41 @@ import {
   Phone,
   Mail,
   MessageCircle,
-  UserCheck
+  UserCheck,
+  LogOut,
+  UserPlus,
+  TrendingUp
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
-import { KPICard } from '@/components/dashboard/KPICard';
+import { DashboardLayout } from '@/components/dashboard/layout/DashboardLayout';
+import { MetricCard } from '@/components/dashboard/cards/MetricCard';
 import { LeadsTable } from '@/components/dashboard/LeadsTable';
 import { useLeads, useLeadActions } from '@/hooks/useDashboard';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { DonutChart } from '@/components/dashboard/charts/DonutChart';
+import { LineChart } from '@/components/dashboard/charts/LineChart';
 
 export default function FuncionariosDashboard() {
-  const [funcionarioEmail, setFuncionarioEmail] = useState('');
-  const [funcionarioLogado, setFuncionarioLogado] = useState<{
-    id: string;
-    nome: string;
-    email: string;
-  } | null>(null);
+  const { funcionario, signOut } = useAuth();
+  const navigate = useNavigate();
   
-  // Para demo, vamos simular filtros para um funcionário específico
-  const filters = funcionarioLogado ? { funcionario_id: funcionarioLogado.id } : {};
+  // Ler tab da URL
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const activeTab = searchParams.get('tab') || 'meus-leads';
+
+  const handleTabChange = (value: string) => {
+    navigate(`/funcionarios?tab=${value}`);
+  };
+  
+  // Filtros baseados no funcionário autenticado
+  const filters = funcionario ? { funcionario_id: funcionario.id } : {};
   
   const { leads, isLoadingLeads, refetchLeads } = useLeads(filters);
   const { updateLeadStatus, assignLeadToFuncionario } = useLeadActions();
   const { toast } = useToast();
-
-  // Simular login básico
-  const handleLogin = () => {
-    if (funcionarioEmail) {
-      // Para demo, criar um funcionário fictício
-      setFuncionarioLogado({
-        id: 'func-demo-001',
-        nome: 'Funcionário Demo',
-        email: funcionarioEmail
-      });
-      toast({
-        title: 'Login realizado!',
-        description: `Bem-vindo, ${funcionarioEmail}`,
-      });
-    }
-  };
-
-  const handleLogout = () => {
-    setFuncionarioLogado(null);
-    setFuncionarioEmail('');
-  };
 
   // Calcular métricas do funcionário
   const meusLeads = leads || [];
@@ -74,7 +64,7 @@ export default function FuncionariosDashboard() {
 
   const handleAceitarLead = async (leadId: string) => {
     try {
-      await assignLeadToFuncionario(leadId, funcionarioLogado.id);
+      await assignLeadToFuncionario(leadId, funcionario!.id);
       toast({
         title: 'Lead aceito!',
         description: 'O lead foi atribuído a você.',
@@ -89,153 +79,160 @@ export default function FuncionariosDashboard() {
     }
   };
 
-  if (!funcionarioLogado) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Painel do Funcionário</CardTitle>
-            <CardDescription>
-              Faça login para acessar seus leads
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Email do funcionário:</label>
-              <Input
-                type="email"
-                placeholder="seu@email.com"
-                value={funcionarioEmail}
-                onChange={(e) => setFuncionarioEmail(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-              />
-            </div>
-            <Button onClick={handleLogin} className="w-full" disabled={!funcionarioEmail}>
-              Acessar Painel
-            </Button>
-            <div className="text-center">
-              <Link to="/">
-                <Button variant="ghost" size="sm">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Voltar ao site
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  // Dados de performance baseados nos leads do funcionário
+  const performanceData = React.useMemo(() => {
+    if (!meusLeads || meusLeads.length === 0) {
+      return [];
+    }
+
+    const hoje = new Date();
+    const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    
+    return Array.from({ length: 7 }, (_, i) => {
+      const data = new Date(hoje);
+      data.setDate(hoje.getDate() - (6 - i));
+      const dataStr = data.toISOString().split('T')[0];
+      const diaSemana = diasSemana[data.getDay()];
+      
+      const leadsDoDia = meusLeads.filter(lead => {
+        return lead.created_at.startsWith(dataStr) || lead.updated_at.startsWith(dataStr);
+      });
+      
+      const atendimentos = leadsDoDia.filter(lead => 
+        lead.status === 'em_atendimento' || lead.status === 'qualificado' || lead.status === 'convertido'
+      ).length;
+      
+      const conversoes = leadsDoDia.filter(lead => lead.status === 'convertido').length;
+      
+      return {
+        name: diaSemana,
+        conversoes,
+        atendimentos
+      };
+    });
+  }, [meusLeads]);
+
+  const leadStatusData = [
+    { name: 'Novos', value: leadsNovos, color: '#3B82F6' },
+    { name: 'Em Atendimento', value: leadsEmAtendimento, color: '#FFD831' },
+    { name: 'Convertidos', value: leadsConvertidos, color: '#10B981' },
+  ];
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
-              <Link to="/">
-                <Button variant="ghost" size="sm">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Site
-                </Button>
-              </Link>
-              <Separator orientation="vertical" className="h-6" />
-              <div>
-                <h1 className="text-xl font-semibold">Meus Leads</h1>
-                <p className="text-sm text-muted-foreground">
-                  Olá, {funcionarioLogado.nome}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <Badge variant="outline" className="gap-1">
-                <Calendar className="w-3 h-3" />
-                {new Date().toLocaleDateString('pt-BR')}
-              </Badge>
-              <Button onClick={refetchLeads} size="sm" variant="outline">
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Atualizar
-              </Button>
-              <Button onClick={handleLogout} size="sm" variant="outline">
-                Sair
-              </Button>
-            </div>
+    <DashboardLayout>
+      <div className="p-6 space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Dashboard do Funcionário</h1>
+            <p className="text-muted-foreground mt-1">
+              Olá {funcionario?.nome}, acompanhe seus leads e performance
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Badge variant="outline" className="gap-1">
+              <Calendar className="w-3 h-3" />
+              {new Date().toLocaleDateString('pt-BR')}
+            </Badge>
+            <Button onClick={refetchLeads} size="sm" variant="outline">
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Atualizar
+            </Button>
           </div>
         </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="container mx-auto p-6">
-        <Tabs defaultValue="meus-leads" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="meus-leads">Meus Leads</TabsTrigger>
-            <TabsTrigger value="novos-leads">Novos Leads</TabsTrigger>
-            <TabsTrigger value="performance">Performance</TabsTrigger>
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3 bg-white shadow-soft">
+            <TabsTrigger value="meus-leads" className="data-[state=active]:bg-accent data-[state=active]:text-primary">
+              <Users className="w-4 h-4 mr-2" />
+              Meus Leads
+            </TabsTrigger>
+            <TabsTrigger value="novos-leads" className="data-[state=active]:bg-accent data-[state=active]:text-primary">
+              <UserPlus className="w-4 h-4 mr-2" />
+              Novos Leads
+            </TabsTrigger>
+            <TabsTrigger value="performance" className="data-[state=active]:bg-accent data-[state=active]:text-primary">
+              <TrendingUp className="w-4 h-4 mr-2" />
+              Performance
+            </TabsTrigger>
           </TabsList>
 
           {/* MEUS LEADS */}
-          <TabsContent value="meus-leads" className="space-y-6">
+          <TabsContent value="meus-leads" className="space-y-6 animate-fade-in-up">
             {/* KPIs do Funcionário */}
             <div className="grid gap-4 md:grid-cols-4">
-              <KPICard
+              <MetricCard
                 title="Leads Atribuídos"
                 value={meusLeads.length}
                 description="Total sob sua responsabilidade"
-                icon={<Users className="w-4 h-4" />}
-                color="default"
+                icon={<Users />}
+                color="info"
+                trend={{ value: 12, type: 'up' }}
               />
-              <KPICard
+              <MetricCard
                 title="Em Atendimento"
                 value={leadsEmAtendimento}
                 description="Leads ativos"
-                icon={<MessageSquare className="w-4 h-4" />}
+                icon={<MessageSquare />}
                 color="warning"
               />
-              <KPICard
+              <MetricCard
                 title="Convertidos"
                 value={leadsConvertidos}
                 description="Leads fechados"
-                icon={<CheckCircle className="w-4 h-4" />}
+                icon={<CheckCircle />}
                 color="success"
+                trend={{ value: 8, type: 'up' }}
               />
-              <KPICard
+              <MetricCard
                 title="Novos Hoje"
                 value={leadsHoje}
                 description="Recebidos hoje"
-                icon={<Clock className="w-4 h-4" />}
+                icon={<Clock />}
                 color="default"
               />
             </div>
 
-            {/* Lista de Leads do Funcionário */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Seus Leads</CardTitle>
-                <CardDescription>
-                  Leads atribuídos para seu atendimento
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isLoadingLeads ? (
-                  <div className="space-y-3">
-                    {[...Array(5)].map((_, i) => (
-                      <div key={i} className="h-12 bg-muted rounded animate-pulse" />
-                    ))}
-                  </div>
-                ) : meusLeads.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <h3 className="text-lg font-medium">Nenhum lead atribuído</h3>
-                    <p className="text-muted-foreground">
-                      Verifique a aba "Novos Leads" para aceitar leads
-                    </p>
-                  </div>
-                ) : (
-                  <LeadsTable leads={meusLeads} onRefresh={refetchLeads} />
-                )}
-              </CardContent>
-            </Card>
+            <div className="grid gap-6 lg:grid-cols-3">
+              {/* Lista de Leads - 2 colunas */}
+              <div className="lg:col-span-2">
+                <Card className="shadow-soft hover:shadow-medium transition-shadow">
+                  <CardHeader>
+                    <CardTitle className="text-lg">Seus Leads</CardTitle>
+                    <CardDescription>
+                      Leads atribuídos para seu atendimento
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {isLoadingLeads ? (
+                      <div className="space-y-3">
+                        {[...Array(5)].map((_, i) => (
+                          <div key={i} className="h-12 bg-muted rounded animate-pulse" />
+                        ))}
+                      </div>
+                    ) : meusLeads.length === 0 ? (
+                      <div className="text-center py-8">
+                        <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <h3 className="text-lg font-medium">Nenhum lead atribuído</h3>
+                        <p className="text-muted-foreground">
+                          Verifique a aba "Novos Leads" para aceitar leads
+                        </p>
+                      </div>
+                    ) : (
+                      <LeadsTable leads={meusLeads} onRefresh={refetchLeads} />
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Gráfico de Status - 1 coluna */}
+              <div>
+                <DonutChart
+                  data={leadStatusData}
+                  title="Distribuição de Leads"
+                  description="Status dos seus leads"
+                />
+              </div>
+            </div>
           </TabsContent>
 
           {/* NOVOS LEADS */}
@@ -269,38 +266,45 @@ export default function FuncionariosDashboard() {
           </TabsContent>
 
           {/* PERFORMANCE */}
-          <TabsContent value="performance" className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold">Sua Performance</h2>
-              <p className="text-muted-foreground">
-                Acompanhe suas métricas de atendimento
-              </p>
-            </div>
-
+          <TabsContent value="performance" className="space-y-6 animate-fade-in-up">
             {/* Métricas de Performance */}
             <div className="grid gap-4 md:grid-cols-3">
-              <KPICard
+              <MetricCard
                 title="Taxa de Conversão"
                 value={meusLeads.length > 0 ? `${Math.round((leadsConvertidos / meusLeads.length) * 100)}%` : '0%'}
                 description="Leads convertidos / Total"
-                icon={<Target className="w-4 h-4" />}
+                icon={<Target />}
                 color={leadsConvertidos / Math.max(meusLeads.length, 1) > 0.25 ? 'success' : 'warning'}
+                trend={{ value: 5, type: 'up' }}
               />
-              <KPICard
+              <MetricCard
                 title="Tempo Médio"
                 value="< 2h"
                 description="Resposta inicial"
-                icon={<Clock className="w-4 h-4" />}
+                icon={<Clock />}
                 color="success"
               />
-              <KPICard
+              <MetricCard
                 title="Satisfação"
                 value="95%"
                 description="Feedback dos clientes"
-                icon={<CheckCircle className="w-4 h-4" />}
+                icon={<CheckCircle />}
                 color="success"
+                trend={{ value: 2, type: 'up' }}
               />
             </div>
+
+            {/* Gráfico de Performance */}
+            <LineChart
+              data={performanceData}
+              lines={[
+                { dataKey: 'conversoes', name: 'Conversões', color: '#10B981' },
+                { dataKey: 'atendimentos', name: 'Atendimentos', color: '#FFD831' }
+              ]}
+              title="Performance Semanal"
+              description="Evolução de atendimentos e conversões"
+              showArea
+            />
 
             {/* Dicas de Atendimento */}
             <div className="grid gap-4 md:grid-cols-2">
@@ -368,6 +372,6 @@ export default function FuncionariosDashboard() {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }

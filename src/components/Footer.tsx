@@ -141,6 +141,9 @@ export default function Footer({ onOpenModal }: FooterProps) {
               <button className="hover:text-accent transition-colors">
                 LGPD
               </button>
+              <a href="/setup" className="hover:text-accent transition-colors">
+                Configurar
+              </a>
               <a href="/admin" className="hover:text-accent transition-colors">
                 Admin
               </a>

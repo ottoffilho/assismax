@@ -1,6 +1,8 @@
 import React from 'react';
 import { ShoppingCart, TrendingDown, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useProdutos } from "@/hooks/useProdutos";
+import { useNavigate } from "react-router-dom";
 
 interface Product {
   id: string;
@@ -13,74 +15,49 @@ interface Product {
   icon: React.ComponentType<{ className?: string }>;
 }
 
-const products: Product[] = [
-  {
-    id: '1',
-    name: 'Arroz Tipo 1',
-    category: 'Cereais',
-    description: 'Arroz branco tipo 1, pacote 5kg',
-    retailPrice: 28.90,
-    wholesalePrice: 24.50,
-    savings: 15,
-    icon: Package,
-  },
-  {
-    id: '2', 
-    name: 'Feijão Carioca',
-    category: 'Leguminosas',
-    description: 'Feijão carioca especial, pacote 1kg',
-    retailPrice: 8.90,
-    wholesalePrice: 7.20,
-    savings: 19,
-    icon: Package,
-  },
-  {
-    id: '3',
-    name: 'Óleo de Soja',
-    category: 'Óleos',
-    description: 'Óleo de soja refinado, garrafa 900ml',
-    retailPrice: 6.50,
-    wholesalePrice: 5.40,
-    savings: 17,
-    icon: Package,
-  },
-  {
-    id: '4',
-    name: 'Café Torrado',
-    category: 'Bebidas',
-    description: 'Café torrado e moído, pacote 500g',
-    retailPrice: 12.90,
-    wholesalePrice: 10.80,
-    savings: 16,
-    icon: Package,
-  },
-  {
-    id: '5',
-    name: 'Leite Integral',
-    category: 'Laticínios',
-    description: 'Leite integral UHT, caixa 1L',
-    retailPrice: 4.20,
-    wholesalePrice: 3.60,
-    savings: 14,
-    icon: Package,
-  },
-  {
-    id: '6',
-    name: 'Refrigerante',
-    category: 'Bebidas',
-    description: 'Refrigerante sabores variados, garrafa 2L',
-    retailPrice: 7.80,
-    wholesalePrice: 6.50,
-    savings: 17,
-    icon: Package,
-  },
-];
 
 interface ProductShowcaseProps {
   onOpenModal: () => void;
 }
 
 export default function ProductShowcase({ onOpenModal }: ProductShowcaseProps) {
+  const navigate = useNavigate();
+  const { data: produtosDoBanco, isLoading } = useProdutos();
+  
+  const produtosExibidos = produtosDoBanco && produtosDoBanco.length > 0 
+    ? produtosDoBanco.slice(0, 6).map(produto => ({
+        id: produto.id,
+        name: produto.nome,
+        category: produto.categoria,
+        description: produto.descricao || '',
+        retailPrice: Number(produto.preco_varejo) || 0,
+        wholesalePrice: Number(produto.preco_atacado) || 0,
+        savings: produto.preco_varejo && produto.preco_atacado 
+          ? Math.round(((Number(produto.preco_varejo) - Number(produto.preco_atacado)) / Number(produto.preco_varejo)) * 100)
+          : 0,
+        icon: Package,
+      }))
+    : [];
+
+  const handleVerCatalogoCompleto = () => {
+    navigate('/produtos');
+  };
+
+  if (isLoading) {
+    return (
+      <section className="section-padding bg-gradient-to-b from-muted/30 to-background">
+        <div className="container-responsive">
+          <div className="text-center">
+            <div className="animate-pulse">
+              <div className="h-8 bg-muted rounded w-64 mx-auto mb-4"></div>
+              <div className="h-4 bg-muted rounded w-96 mx-auto"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="section-padding bg-gradient-to-b from-muted/30 to-background">
       <div className="container-responsive">
@@ -95,8 +72,9 @@ export default function ProductShowcase({ onOpenModal }: ProductShowcaseProps) {
         </div>
 
         {/* Products Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-          {products.map((product, index) => (
+        {produtosExibidos.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+            {produtosExibidos.map((product, index) => (
             <div 
               key={product.id} 
               className="card-product hover-lift animate-fade-in-up"
@@ -151,8 +129,17 @@ export default function ProductShowcase({ onOpenModal }: ProductShowcaseProps) {
                 Solicitar Orçamento
               </Button>
             </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-16 mb-16">
+            <Package className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-xl font-semibold mb-2">Produtos em breve!</h3>
+            <p className="text-muted-foreground">
+              Estamos organizando nosso catálogo. Em breve você terá acesso a todos os produtos com preços especiais.
+            </p>
+          </div>
+        )}
 
         {/* CTA Section */}
         <div className="text-center bg-gradient-card rounded-2xl p-8 shadow-medium">
@@ -163,7 +150,7 @@ export default function ProductShowcase({ onOpenModal }: ProductShowcaseProps) {
             Temos centenas de produtos com preços especiais. Solicite seu orçamento personalizado e descubra quanto você pode economizar.
           </p>
           <Button 
-            onClick={onOpenModal}
+            onClick={handleVerCatalogoCompleto}
             variant="accent" 
             size="lg"
             className="text-lg px-8 py-4"

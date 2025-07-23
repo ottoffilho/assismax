@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Force Logout - ASSISMAX</title>
+    <script>
+        // Limpar todo o localStorage relacionado ao Supabase
+        const keys = Object.keys(localStorage);
+        keys.forEach(key => {
+            if (key.includes('supabase') || key.includes('auth') || key.includes('session')) {
+                localStorage.removeItem(key);
+            }
+        });
+        
+        // Limpar sessionStorage também
+        const sessionKeys = Object.keys(sessionStorage);
+        sessionKeys.forEach(key => {
+            if (key.includes('supabase') || key.includes('auth') || key.includes('session')) {
+                sessionStorage.removeItem(key);
+            }
+        });
+        
+        // Redirecionar para a página de login
+        alert('Logout forçado! Redirecionando para o login...');
+        window.location.href = 'http://localhost:8080/login';
+    </script>
+</head>
+<body>
+    <h1>Logout forçado executado!</h1>
+    <p>Você será redirecionado automaticamente...</p>
+</body>
+</html>

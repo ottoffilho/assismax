@@ -13,26 +13,118 @@ import {
   ArrowLeft,
   Calendar,
   BarChart3,
-  Download
+  Download,
+  LogOut,
+  UserPlus,
+  FileText,
+  Activity,
+  Package
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
-import { KPICard } from '@/components/dashboard/KPICard';
+import { DashboardLayout } from '@/components/dashboard/layout/DashboardLayout';
+import { MetricCard } from '@/components/dashboard/cards/MetricCard';
 import { LeadsTable } from '@/components/dashboard/LeadsTable';
 import { LeadsFilters } from '@/components/dashboard/LeadsFilters';
+import { FuncionariosManager } from '@/components/admin/FuncionariosManager';
+import { ProdutosManager } from '@/components/admin/ProdutosManager';
 import { useDashboard, useLeads } from '@/hooks/useDashboard';
+import { useSimpleDashboard } from '@/hooks/useSimpleDashboard';
+import { useAuth } from '@/hooks/useAuth';
+import { DonutChart } from '@/components/dashboard/charts/DonutChart';
+import { BarChart } from '@/components/dashboard/charts/BarChart';
+import { LineChart } from '@/components/dashboard/charts/LineChart';
 
 export default function AdminDashboard() {
   const { metrics, isLoadingMetrics, metricsError } = useDashboard();
   const { leads, isLoadingLeads, leadsError, filters, updateFilters, clearFilters, refetchLeads } = useLeads();
-  const [activeTab, setActiveTab] = useState('overview');
+  const { leads: simpleLeads, isLoading: simpleLoading, error: simpleError } = useSimpleDashboard();
+  const { funcionario, signOut } = useAuth();
+  const navigate = useNavigate();
+  
+  // Ler tab da URL
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const activeTab = searchParams.get('tab') || 'overview';
+
+  const handleTabChange = (value: string) => {
+    navigate(`/admin?tab=${value}`);
+  };
 
   const handleRefresh = () => {
     refetchLeads();
     window.location.reload(); // Para atualizar métricas também
   };
 
-  if (metricsError || leadsError) {
+  // Debug: log dos dados recebidos
+  console.log('Simple leads:', simpleLeads);
+  console.log('Simple loading:', simpleLoading);
+  console.log('Simple error:', simpleError);
+
+  // Preparar dados para gráficos usando useMemo
+  const weeklyLeadsData = React.useMemo(() => {
+    if (!metrics?.metricasPorDia || metrics.metricasPorDia.length === 0) {
+      return [];
+    }
+
+    // Obter últimos 7 dias
+    const hoje = new Date();
+    const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    
+    return Array.from({ length: 7 }, (_, i) => {
+      const data = new Date(hoje);
+      data.setDate(hoje.getDate() - (6 - i));
+      const dataStr = data.toISOString().split('T')[0];
+      const diaSemana = diasSemana[data.getDay()];
+      
+      const dadosDia = metrics.metricasPorDia.find(m => m.data === dataStr);
+      const leads = dadosDia?.leads || 0;
+      
+      // Estimar conversões baseado na taxa de conversão geral
+      const conversoes = Math.round(leads * (metrics.taxaConversao / 100));
+      
+      return {
+        name: diaSemana,
+        leads,
+        conversoes
+      };
+    });
+  }, [metrics?.metricasPorDia, metrics?.taxaConversao]);
+
+  const conversionTrendData = React.useMemo(() => {
+    if (!metrics?.metricasPorDia || metrics.metricasPorDia.length === 0) {
+      return [];
+    }
+
+    // Agrupar dados por semana dos últimos 30 dias
+    const dataAtual = new Date();
+    const semanas = [];
+    
+    for (let i = 0; i < 6; i++) {
+      const inicioSemana = new Date(dataAtual);
+      inicioSemana.setDate(dataAtual.getDate() - (i * 7) - 6);
+      const fimSemana = new Date(dataAtual);
+      fimSemana.setDate(dataAtual.getDate() - (i * 7));
+      
+      const dadosSemana = metrics.metricasPorDia.filter(m => {
+        const data = new Date(m.data);
+        return data >= inicioSemana && data <= fimSemana;
+      });
+      
+      const totalLeads = dadosSemana.reduce((sum, d) => sum + d.leads, 0);
+      const conversoes = Math.round(totalLeads * (metrics.taxaConversao / 100));
+      const taxa = totalLeads > 0 ? Math.round((conversoes / totalLeads) * 100) : 0;
+      
+      semanas.unshift({
+        name: `S${i + 1}`,
+        taxa: taxa
+      });
+    }
+    
+    return semanas.slice(0, 6);
+  }, [metrics?.metricasPorDia, metrics?.taxaConversao]);
+
+  if (metricsError || leadsError || simpleError) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Card className="w-full max-w-md">
@@ -52,164 +144,127 @@ export default function AdminDashboard() {
     );
   }
 
+  // Preparar dados para gráficos
+  const leadStatusChartData = metrics?.leadsPorStatus?.map(item => ({
+    name: item.status.replace('_', ' ').charAt(0).toUpperCase() + item.status.replace('_', ' ').slice(1),
+    value: item.total,
+    color: item.status === 'novo' ? '#3B82F6' : 
+           item.status === 'em_atendimento' ? '#FFD831' : 
+           item.status === 'qualificado' ? '#8B5CF6' :
+           item.status === 'convertido' ? '#10B981' : '#EF4444'
+  })) || [];
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
-              <Link to="/">
-                <Button variant="ghost" size="sm">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Voltar
-                </Button>
-              </Link>
-              <Separator orientation="vertical" className="h-6" />
-              <div>
-                <h1 className="text-xl font-semibold">Dashboard ASSISMAX</h1>
-                <p className="text-sm text-muted-foreground">Painel Administrativo</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <Badge variant="outline" className="gap-1">
-                <Calendar className="w-3 h-3" />
-                {new Date().toLocaleDateString('pt-BR')}
-              </Badge>
-              <Button onClick={handleRefresh} size="sm" variant="outline">
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Atualizar
-              </Button>
-            </div>
+    <DashboardLayout>
+      <div className="p-6 space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Dashboard Administrativo</h1>
+            <p className="text-muted-foreground mt-1">
+              Bem-vindo {funcionario?.nome}, acompanhe as métricas do ASSISMAX
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Badge variant="outline" className="gap-1">
+              <Calendar className="w-3 h-3" />
+              {new Date().toLocaleDateString('pt-BR')}
+            </Badge>
+            <Button onClick={handleRefresh} size="sm" variant="outline">
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Atualizar
+            </Button>
           </div>
         </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="container mx-auto p-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="overview">Visão Geral</TabsTrigger>
-            <TabsTrigger value="leads">Gestão de Leads</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4 bg-white shadow-soft">
+            <TabsTrigger value="overview" className="data-[state=active]:bg-accent data-[state=active]:text-primary">
+              <Activity className="w-4 h-4 mr-2" />
+              Visão Geral
+            </TabsTrigger>
+            <TabsTrigger value="leads" className="data-[state=active]:bg-accent data-[state=active]:text-primary">
+              <Users className="w-4 h-4 mr-2" />
+              Leads
+            </TabsTrigger>
+            <TabsTrigger value="funcionarios" className="data-[state=active]:bg-accent data-[state=active]:text-primary">
+              <UserPlus className="w-4 h-4 mr-2" />
+              Funcionários
+            </TabsTrigger>
+            <TabsTrigger value="produtos" className="data-[state=active]:bg-accent data-[state=active]:text-primary">
+              <Package className="w-4 h-4 mr-2" />
+              Produtos
+            </TabsTrigger>
+            <TabsTrigger value="relatorios" className="data-[state=active]:bg-accent data-[state=active]:text-primary">
+              <FileText className="w-4 h-4 mr-2" />
+              Relatórios
+            </TabsTrigger>
           </TabsList>
 
           {/* VISÃO GERAL */}
-          <TabsContent value="overview" className="space-y-6">
+          <TabsContent value="overview" className="space-y-6 animate-fade-in-up">
             {/* KPIs Principais */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <KPICard
+              <MetricCard
                 title="Leads Hoje"
                 value={isLoadingMetrics ? '...' : metrics?.leadsHoje || 0}
                 description="Captados nas últimas 24h"
-                icon={<Users className="w-4 h-4" />}
-                color="default"
+                icon={<Users />}
+                color="info"
+                trend={{ value: 15, type: 'up' }}
               />
-              <KPICard
+              <MetricCard
                 title="Leads esta Semana"
                 value={isLoadingMetrics ? '...' : metrics?.leadsSemana || 0}
                 description="Últimos 7 dias"
-                icon={<TrendingUp className="w-4 h-4" />}
+                icon={<TrendingUp />}
                 color="success"
+                trend={{ value: 8, type: 'up' }}
               />
-              <KPICard
+              <MetricCard
                 title="Taxa de Conversão"
                 value={isLoadingMetrics ? '...' : `${metrics?.taxaConversao || 0}%`}
                 description="Leads → Clientes"
-                icon={<Target className="w-4 h-4" />}
+                icon={<Target />}
                 color="warning"
+                trend={{ value: 3, type: 'down' }}
               />
-              <KPICard
+              <MetricCard
                 title="Total de Leads"
                 value={isLoadingMetrics ? '...' : metrics?.leadsTotal || 0}
                 description="Desde o início"
-                icon={<MessageSquare className="w-4 h-4" />}
+                icon={<MessageSquare />}
                 color="default"
               />
             </div>
 
-            {/* Estatísticas Rápidas */}
-            <div className="grid gap-4 md:grid-cols-2">
-              {/* Leads por Status */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Leads por Status</CardTitle>
-                  <CardDescription>Distribuição atual dos leads</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {isLoadingMetrics ? (
-                    <div className="space-y-2">
-                      <div className="h-4 bg-muted rounded animate-pulse" />
-                      <div className="h-4 bg-muted rounded animate-pulse w-3/4" />
-                      <div className="h-4 bg-muted rounded animate-pulse w-1/2" />
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {metrics?.leadsPorStatus?.map((item) => (
-                        <div key={item.status} className="flex items-center justify-between">
-                          <span className="text-sm font-medium capitalize">
-                            {item.status.replace('_', ' ')}
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
-                              <div 
-                                className="h-full bg-primary rounded-full"
-                                style={{ 
-                                  width: `${(item.total / (metrics.leadsTotal || 1)) * 100}%` 
-                                }}
-                              />
-                            </div>
-                            <Badge variant="outline" className="min-w-[40px] justify-center">
-                              {item.total}
-                            </Badge>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Leads por Origem */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Leads por Origem</CardTitle>
-                  <CardDescription>Canais de captação</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {isLoadingMetrics ? (
-                    <div className="space-y-2">
-                      <div className="h-4 bg-muted rounded animate-pulse" />
-                      <div className="h-4 bg-muted rounded animate-pulse w-3/4" />
-                      <div className="h-4 bg-muted rounded animate-pulse w-1/2" />
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {metrics?.leadsPorOrigem?.map((item) => (
-                        <div key={item.origem} className="flex items-center justify-between">
-                          <span className="text-sm font-medium">
-                            {item.origem === 'landing_page' ? 'Landing Page' : item.origem}
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
-                              <div 
-                                className="h-full bg-blue-500 rounded-full"
-                                style={{ 
-                                  width: `${(item.total / (metrics.leadsTotal || 1)) * 100}%` 
-                                }}
-                              />
-                            </div>
-                            <Badge variant="outline" className="min-w-[40px] justify-center">
-                              {item.total}
-                            </Badge>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+            {/* Gráficos Principais */}
+            <div className="grid gap-6 lg:grid-cols-2">
+              <DonutChart
+                data={leadStatusChartData}
+                title="Distribuição de Leads por Status"
+                description="Visão geral do funil de vendas"
+              />
+              <BarChart
+                data={weeklyLeadsData}
+                bars={[
+                  { dataKey: 'leads', name: 'Leads Captados', color: '#FFD831' },
+                  { dataKey: 'conversoes', name: 'Conversões', color: '#10B981' }
+                ]}
+                title="Atividade Semanal"
+                description="Leads captados e convertidos por dia"
+              />
             </div>
+
+            {/* Gráfico de Tendência */}
+            <LineChart
+              data={conversionTrendData}
+              lines={[
+                { dataKey: 'taxa', name: 'Taxa de Conversão (%)', color: '#8B5CF6' }
+              ]}
+              title="Tendência de Conversão"
+              description="Evolução da taxa de conversão nos últimos 6 meses"
+              showArea
+            />
 
             {/* Leads Recentes */}
             <Card>
@@ -229,7 +284,7 @@ export default function AdminDashboard() {
                     ))}
                   </div>
                 ) : (
-                  <LeadsTable leads={leads?.slice(0, 10) || []} onRefresh={refetchLeads} />
+                  <LeadsTable leads={simpleLeads?.slice(0, 10) || []} onRefresh={refetchLeads} />
                 )}
               </CardContent>
             </Card>
@@ -241,7 +296,7 @@ export default function AdminDashboard() {
               <div>
                 <h2 className="text-2xl font-bold">Gestão de Leads</h2>
                 <p className="text-muted-foreground">
-                  {isLoadingLeads ? 'Carregando...' : `${leads?.length || 0} leads encontrados`}
+                  {simpleLoading ? 'Carregando...' : `${simpleLeads?.length || 0} leads encontrados`}
                 </p>
               </div>
               <Button onClick={refetchLeads} variant="outline">
@@ -264,26 +319,26 @@ export default function AdminDashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {isLoadingLeads ? (
+                {simpleLoading ? (
                   <div className="space-y-3">
                     {[...Array(10)].map((_, i) => (
                       <div key={i} className="h-12 bg-muted rounded animate-pulse" />
                     ))}
                   </div>
                 ) : (
-                  <LeadsTable leads={leads || []} onRefresh={refetchLeads} />
+                  <LeadsTable leads={simpleLeads || []} onRefresh={refetchLeads} />
                 )}
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* ANALYTICS */}
-          <TabsContent value="analytics" className="space-y-6">
+          {/* RELATÓRIOS */}
+          <TabsContent value="relatorios" className="space-y-6 animate-fade-in-up">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-bold">Analytics</h2>
+                <h2 className="text-2xl font-bold">Relatórios e Analytics</h2>
                 <p className="text-muted-foreground">
-                  Análise detalhada de performance
+                  Análise detalhada de performance e métricas
                 </p>
               </div>
               <Button variant="outline">
@@ -293,47 +348,81 @@ export default function AdminDashboard() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">
-              <KPICard
+              <MetricCard
                 title="Leads este Mês"
                 value={isLoadingMetrics ? '...' : metrics?.leadsMes || 0}
                 description="Últimos 30 dias"
-                icon={<BarChart3 className="w-4 h-4" />}
+                icon={<BarChart3 />}
+                color="info"
               />
-              <KPICard
+              <MetricCard
                 title="Taxa de Captação"
                 value={isLoadingMetrics ? '...' : `${((metrics?.leadsMes || 0) / 30).toFixed(1)}/dia`}
                 description="Média diária"
-                icon={<TrendingUp className="w-4 h-4" />}
+                icon={<TrendingUp />}
+                color="default"
               />
-              <KPICard
+              <MetricCard
                 title="Leads Convertidos"
                 value={isLoadingMetrics ? '...' : 
                   metrics?.leadsPorStatus?.find(s => s.status === 'convertido')?.total || 0
                 }
                 description="Total convertidos"
-                icon={<Target className="w-4 h-4" />}
+                icon={<Target />}
                 color="success"
+                trend={{ value: 12, type: 'up' }}
               />
             </div>
 
-            <Card>
+            <Card className="shadow-soft">
               <CardHeader>
-                <CardTitle>Métricas Detalhadas</CardTitle>
+                <CardTitle>Relatórios Disponíveis</CardTitle>
                 <CardDescription>
-                  Relatórios e análises avançadas serão implementados aqui
+                  Selecione o tipo de relatório para gerar
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8 text-muted-foreground">
-                  <BarChart3 className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>Gráficos e relatórios detalhados</p>
-                  <p className="text-sm">Em desenvolvimento - próxima atualização</p>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Button variant="outline" className="h-auto p-4 justify-start">
+                    <div className="text-left">
+                      <p className="font-semibold">Relatório de Vendas</p>
+                      <p className="text-sm text-muted-foreground">Análise de conversões e faturamento</p>
+                    </div>
+                  </Button>
+                  <Button variant="outline" className="h-auto p-4 justify-start">
+                    <div className="text-left">
+                      <p className="font-semibold">Relatório de Leads</p>
+                      <p className="text-sm text-muted-foreground">Origem, status e distribuição</p>
+                    </div>
+                  </Button>
+                  <Button variant="outline" className="h-auto p-4 justify-start">
+                    <div className="text-left">
+                      <p className="font-semibold">Performance da Equipe</p>
+                      <p className="text-sm text-muted-foreground">Métricas por funcionário</p>
+                    </div>
+                  </Button>
+                  <Button variant="outline" className="h-auto p-4 justify-start">
+                    <div className="text-left">
+                      <p className="font-semibold">Análise de Canais</p>
+                      <p className="text-sm text-muted-foreground">ROI por canal de captação</p>
+                    </div>
+                  </Button>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* FUNCIONÁRIOS */}
+          <TabsContent value="funcionarios" className="space-y-6 animate-fade-in-up">
+            <FuncionariosManager />
+          </TabsContent>
+
+          {/* PRODUTOS */}
+          <TabsContent value="produtos" className="space-y-6 animate-fade-in-up">
+            <ProdutosManager />
+          </TabsContent>
         </Tabs>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }

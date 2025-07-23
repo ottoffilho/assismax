@@ -78,6 +78,8 @@ npm install
   - Trigger para automações
 - `lead-automation` - Automação e integração com N8N
 - `ai-conversation` - Chatbot inteligente para qualificação
+- `initial-setup` - Setup sistema (empresa + admin inicial)
+- `create-funcionario` - Criação de novos usuários pelo admin
 
 ## Key Business Logic Hooks
 
@@ -92,10 +94,17 @@ npm install
 - Refetch automático a cada 5 minutos
 - KPIs: leads hoje/semana/mês, taxa conversão
 
-### `useLeads`
-- Listagem com filtros avançados
-- Paginação e busca
-- Actions para status e atribuição
+### `useChatbotConversation`
+- Gerencia conversas com chatbot IA
+- Integração com Edge Function `ai-conversation`
+- Personalidade definida em `assistantPersonality.ts`
+- Context-aware para produtos do atacarejo
+
+### `useAuth`
+- **Dual Authentication Model**: Supabase Auth + funcionario table
+- **Role-based Redirects**: Admin → `/admin`, Employee → `/funcionarios`
+- **Session Management**: Token refresh e state persistence
+- **Timeout Handling**: 5s timeout para queries DB
 
 ### Dashboard Architecture
 - **AdminDashboard** - Métricas completas, gestão de leads, analytics
@@ -163,6 +172,22 @@ npm install
 - **MSW** para mock de APIs (quando implementado)
 - **Foco em integração** - Fluxo completo Landing → Captura → IA → Conversão
 
+## Authentication & Setup
+
+- **Dual Authentication**: Supabase Auth + tabela `funcionarios` 
+- **AuthContext Components**:
+  - `AuthContext` - State management com role-based redirects
+  - `ProtectedRoute` - Proteção de rotas com verificação de roles
+  - `LoginModal` - Modal reutilizável para autenticação
+- **Setup Flow**: 
+  - `/setup` - Configuração inicial automática via Edge Function
+  - Criação empresa ASSISMAX + admin inicial
+  - Idempotente e transacional
+- **Níveis de acesso**:
+  - `admin` - Proprietário (dashboard completo) 
+  - `funcionario` - Funcionário (dashboard simplificado)
+- **Error Handling**: Timeouts, toasts em PT-BR, fallbacks
+
 ## Configuration
 
 - **Vite**: Host `::` porta 8080, React SWC plugin, Lovable tagger em dev
@@ -196,6 +221,7 @@ npm install
 - Schema Supabase completo
 - **Dashboards admin/funcionários COMPLETOS**
 - **Sistema de gestão de leads avançado**
+- **Sistema de autenticação completo** (dual auth + setup)
 - Fundação LGPD
 - Sistema de design responsivo
 - **Hooks com validação em tempo real**

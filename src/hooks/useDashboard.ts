@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 export interface DashboardMetrics {
   leadsHoje: number;
@@ -48,50 +49,41 @@ export function useDashboard() {
       const semanaAtras = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
       const mesAtras = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-      // Buscar empresa padrão
-      const { data: empresa } = await supabase
-        .from('empresas')
-        .select('id')
-        .eq('ativo', true)
-        .limit(1)
-        .single();
-
-      if (!empresa) {
-        throw new Error('Empresa não encontrada');
-      }
+      // Usar ID direto da empresa ASSISMAX
+      const empresaId = '231f795a-b14c-438b-a896-2f2e479cfa02';
 
       // Leads hoje
       const { count: leadsHoje } = await supabase
         .from('leads')
         .select('*', { count: 'exact', head: true })
-        .eq('empresa_id', empresa.id)
+        .eq('empresa_id', empresaId)
         .gte('created_at', hoje);
 
       // Leads última semana
       const { count: leadsSemana } = await supabase
         .from('leads')
         .select('*', { count: 'exact', head: true })
-        .eq('empresa_id', empresa.id)
+        .eq('empresa_id', empresaId)
         .gte('created_at', semanaAtras);
 
       // Leads último mês
       const { count: leadsMes } = await supabase
         .from('leads')
         .select('*', { count: 'exact', head: true })
-        .eq('empresa_id', empresa.id)
+        .eq('empresa_id', empresaId)
         .gte('created_at', mesAtras);
 
       // Total de leads
       const { count: leadsTotal } = await supabase
         .from('leads')
         .select('*', { count: 'exact', head: true })
-        .eq('empresa_id', empresa.id);
+        .eq('empresa_id', empresaId);
 
       // Leads por origem
       const { data: leadsPorOrigem } = await supabase
         .from('leads')
         .select('origem')
-        .eq('empresa_id', empresa.id);
+        .eq('empresa_id', empresaId);
 
       const origemCounts = leadsPorOrigem?.reduce((acc: Record<string, number>, lead) => {
         acc[lead.origem] = (acc[lead.origem] || 0) + 1;
@@ -102,7 +94,7 @@ export function useDashboard() {
       const { data: leadsPorStatus } = await supabase
         .from('leads')
         .select('status')
-        .eq('empresa_id', empresa.id);
+        .eq('empresa_id', empresaId);
 
       const statusCounts = leadsPorStatus?.reduce((acc: Record<string, number>, lead) => {
         acc[lead.status] = (acc[lead.status] || 0) + 1;
@@ -113,7 +105,7 @@ export function useDashboard() {
       const { data: metricasDiarias } = await supabase
         .from('leads')
         .select('created_at')
-        .eq('empresa_id', empresa.id)
+        .eq('empresa_id', empresaId)
         .gte('created_at', mesAtras)
         .order('created_at', { ascending: true });
 
@@ -154,17 +146,8 @@ export function useLeads(filters: LeadFilters = {}) {
   const { data: leads, isLoading: loadingLeads, error: leadsError, refetch } = useQuery({
     queryKey: ['leads', currentFilters],
     queryFn: async (): Promise<Lead[]> => {
-      // Buscar empresa padrão
-      const { data: empresa } = await supabase
-        .from('empresas')
-        .select('id')
-        .eq('ativo', true)
-        .limit(1)
-        .single();
-
-      if (!empresa) {
-        throw new Error('Empresa não encontrada');
-      }
+      // Usar ID direto da empresa ASSISMAX
+      const empresaId = '231f795a-b14c-438b-a896-2f2e479cfa02';
 
       let query = supabase
         .from('leads')
@@ -181,7 +164,7 @@ export function useLeads(filters: LeadFilters = {}) {
           updated_at,
           funcionario:funcionarios(nome, email)
         `)
-        .eq('empresa_id', empresa.id);
+        .eq('empresa_id', empresaId);
 
       // Aplicar filtros
       if (currentFilters.status) {

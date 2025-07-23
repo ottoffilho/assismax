@@ -983,3 +983,499 @@ O ASSISMAX agora possui um sistema completo de captação de leads que:
 - **Receita adicional**: R$ 75.000/mês estimado
 
 **STATUS FINAL: Sistema ASSISMAX pronto para produção com 95% das funcionalidades operacionais. IA qualificadora funcional. Dashboards completos. Faltam apenas ativação de integrações externas para 100% de automação.**
+
+---
+
+## 13. NOVAS FUNCIONALIDADES ESTRATÉGICAS - FASE DE EXPANSÃO AVANÇADA
+
+### **🎯 MELHORIAS PRIORITÁRIAS IDENTIFICADAS (23/01/2025)**
+
+#### **13.1 Chatbot Administrativo Especializado em Marketing**
+
+**Objetivo:** Fornecer ao proprietário um assistente IA especializado em estratégias de marketing, conversão e vendas para atacarejo.
+
+**Funcionalidades Detalhadas:**
+- **IA Consultora de Marketing**: Agente especializado em marketing digital, conversão B2C e estratégias de atacarejo
+- **Análise de Performance**: Interpretação inteligente de métricas e sugestões de otimização
+- **Estratégias Personalizadas**: Recomendações baseadas nos dados reais do negócio
+- **Benchmarking Setorial**: Comparações com mercado de atacarejo regional
+- **Campanhas Sugeridas**: Ideias de campanhas baseadas em sazonalidade e produtos
+
+**Implementação Técnica:**
+```typescript
+// Hook especializado para chat administrativo
+interface AdminChatContext {
+  metricas_atuais: DashboardMetrics
+  historico_vendas: SalesHistory
+  produtos_performance: ProductPerformance
+  concorrencia_analise: CompetitorAnalysis
+  sazonalidade_dados: SeasonalityData
+}
+
+// Personalidade especializada
+const ADMIN_MARKETING_PROMPT = `
+Você é Dr. Marketing, consultor sênior especializado em atacarejo B2C.
+Tenha acesso a todas as métricas do ASSISMAX em tempo real.
+
+ESPECIALIDADES:
+- Marketing digital para atacarejo (Google Ads, Facebook, TikTok)
+- Otimização de conversão de landing pages
+- Estratégias de precificação competitiva
+- Campanhas sazonais para produtos básicos
+- Análise de LTV e CAC para atacarejo
+- Growth hacking para negócios locais
+
+ANÁLISE BASEADA EM DADOS:
+- Taxa conversão atual: {metrics.taxaConversao}%
+- Leads/dia: {metrics.leadsHoje}
+- Produtos top: {produtos.maisVendidos}
+- Ticket médio: R$ {vendas.ticketMedio}
+
+SEMPRE FORNEÇA:
+1. Diagnóstico da situação atual
+2. 3 ações específicas e priorizadas
+3. ROI estimado para cada sugestão
+4. Timeline de implementação
+5. Métricas para acompanhar resultados
+
+TOM: Consultivo, experiente, baseado em dados, pragmático.
+`
+```
+
+**Interface no Dashboard Admin:**
+- Aba exclusiva "Consultor IA" no sidebar administrativo
+- Chat persistente com histórico de consultorias
+- Gráficos e métricas integrados nas respostas
+- Exportação de relatórios de consultoria
+- Agendamento de análises periódicas
+
+#### **13.2 Sistema de Gestão de Produtos com Sincronização Landing Page**
+
+**Objetivo:** Interface administrativa para cadastro manual de produtos que aparecem automaticamente na landing page.
+
+**Funcionalidades Detalhadas:**
+- **CRUD Completo de Produtos**: Interface administrativa para gerenciar catálogo
+- **Upload de Imagens**: Sistema de storage para fotos de produtos
+- **Categorização Inteligente**: Agrupamento automático (Básicos, Bebidas, Limpeza, etc.)
+- **Gestão de Preços**: Varejo vs Atacado com margens configuráveis
+- **Status e Disponibilidade**: Controle de produtos ativos/inativos
+- **Sincronização Automática**: Produtos aparecem instantaneamente na landing page
+
+**Estrutura do Banco Expandida:**
+```sql
+-- Atualizar tabela produtos existente
+ALTER TABLE produtos ADD COLUMN IF NOT EXISTS marca VARCHAR(100);
+ALTER TABLE produtos ADD COLUMN IF NOT EXISTS unidade_medida VARCHAR(20) DEFAULT 'kg';
+ALTER TABLE produtos ADD COLUMN IF NOT EXISTS quantidade_minima INTEGER DEFAULT 1;
+ALTER TABLE produtos ADD COLUMN IF NOT EXISTS promocao_ativa BOOLEAN DEFAULT false;
+ALTER TABLE produtos ADD COLUMN IF NOT EXISTS preco_promocional DECIMAL(10,2);
+ALTER TABLE produtos ADD COLUMN IF NOT EXISTS destaque_landing BOOLEAN DEFAULT false;
+ALTER TABLE produtos ADD COLUMN IF NOT EXISTS posicao_exibicao INTEGER DEFAULT 0;
+
+-- Tabela para múltiplas imagens
+CREATE TABLE produtos_imagens (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  produto_id UUID REFERENCES produtos(id) ON DELETE CASCADE,
+  url_imagem TEXT NOT NULL,
+  principal BOOLEAN DEFAULT false,
+  ordem INTEGER DEFAULT 0,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Tabela para promoções
+CREATE TABLE promocoes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  empresa_id UUID REFERENCES empresas(id) ON DELETE CASCADE,
+  titulo VARCHAR NOT NULL,
+  descricao TEXT,
+  tipo VARCHAR NOT NULL, -- 'desconto_percentual', 'desconto_valor', 'leve_pague'
+  valor_desconto DECIMAL(10,2),
+  data_inicio DATE NOT NULL,
+  data_fim DATE NOT NULL,
+  ativo BOOLEAN DEFAULT true,
+  produtos_aplicaveis UUID[],
+  created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+**Interface Administrativa:**
+- **Aba "Produtos"** no sidebar do dashboard admin
+- **Lista com DataTable**: Filtros, busca, paginação
+- **Modal de Edição**: Formulário completo com upload de imagens
+- **Preview da Landing**: Visualização em tempo real de como aparece
+- **Gestão de Promoções**: Interface para criar campanhas promocionais
+- **Analytics de Produtos**: Produtos mais visualizados na landing
+
+**Sincronização com Landing Page:**
+```typescript
+// Hook para produtos da landing page
+const useLandingProducts = () => {
+  return useQuery({
+    queryKey: ['landing-products'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('produtos')
+        .select(`
+          *,
+          produtos_imagens(url_imagem, principal, ordem)
+        `)
+        .eq('ativo', true)
+        .eq('destaque_landing', true)
+        .order('posicao_exibicao', { ascending: true });
+      
+      return data;
+    }
+  });
+};
+```
+
+#### **13.3 Edge Function para Processamento de XML de Notas Fiscais**
+
+**Objetivo:** Preparar infraestrutura para futura automação de cadastro de produtos via XML de notas fiscais.
+
+**Funcionalidades Preparatórias:**
+- **Parser de XML NFe**: Leitura de notas fiscais eletrônicas
+- **Extração de Dados**: Produtos, preços, fornecedores, impostos
+- **Validação de Dados**: Verificação de integridade e formatação
+- **Sugestão de Cadastro**: IA para classificar e sugerir preços de venda
+- **Auditoria Fiscal**: Log completo para conformidade contábil
+
+**Implementação da Edge Function:**
+```typescript
+// supabase/functions/process-nfe-xml/index.ts
+interface NFeProduto {
+  codigo: string;
+  descricao: string;
+  ncm: string;
+  cfop: string;
+  unidade: string;
+  quantidade: number;
+  valor_unitario: number;
+  valor_total: number;
+  impostos: {
+    icms: number;
+    pis: number;
+    cofins: number;
+  };
+}
+
+const processNFeXML = async (xmlContent: string) => {
+  // Parse XML da NFe
+  const parser = new XMLParser();
+  const nfe = parser.parse(xmlContent);
+  
+  // Extrair produtos
+  const produtos: NFeProduto[] = extractProducts(nfe);
+  
+  // Aplicar IA para sugerir classificação
+  const produtosSugeridos = await classifyProducts(produtos);
+  
+  // Calcular preços sugeridos (margem atacado/varejo)
+  const precosSugeridos = calculateSuggestedPrices(produtosSugeridos);
+  
+  return {
+    produtos: precosSugeridos,
+    resumo: {
+      total_produtos: produtos.length,
+      valor_total_nfe: nfe.total,
+      fornecedor: nfe.emit.razaoSocial
+    }
+  };
+};
+```
+
+**Interface de Upload:**
+- **Aba "Importar NFe"** no módulo de produtos
+- **Upload de arquivo XML**: Drag & drop com validação
+- **Preview de Produtos**: Lista com produtos encontrados
+- **Sugestões de IA**: Preços e categorias sugeridas
+- **Importação Seletiva**: Escolher quais produtos cadastrar
+
+#### **13.4 Sistema de Disparo em Massa para Leads Convertidos**
+
+**Objetivo:** Plataforma de marketing direto para clientes convertidos com templates modernos e conformidade LGPD.
+
+**Funcionalidades Detalhadas:**
+- **Segmentação Avançada**: Filtros por produtos, ticket médio, frequência de compra
+- **Templates Visuais**: Editor drag & drop para criar campanhas WhatsApp
+- **Agendamento Inteligente**: Horários otimizados por perfil de cliente
+- **A/B Testing**: Testes de diferentes abordagens
+- **Compliance LGPD**: Opt-out automático e gestão de consentimentos
+
+**Estrutura de Dados:**
+```sql
+-- Campanhas de marketing
+CREATE TABLE campanhas_marketing (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  empresa_id UUID REFERENCES empresas(id) ON DELETE CASCADE,
+  nome VARCHAR NOT NULL,
+  tipo VARCHAR NOT NULL, -- 'promocional', 'educativo', 'sazonal'
+  template_whatsapp TEXT NOT NULL,
+  template_email TEXT,
+  segmentacao JSONB NOT NULL, -- Filtros para público-alvo
+  agendamento JSONB, -- Configurações de horário
+  status VARCHAR DEFAULT 'rascunho', -- 'rascunho', 'agendada', 'enviando', 'concluida'
+  metricas JSONB DEFAULT '{}',
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Envios da campanha
+CREATE TABLE campanhas_envios (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  campanha_id UUID REFERENCES campanhas_marketing(id) ON DELETE CASCADE,
+  lead_id UUID REFERENCES leads(id) ON DELETE CASCADE,
+  canal VARCHAR NOT NULL, -- 'whatsapp', 'email'
+  status VARCHAR DEFAULT 'pendente', -- 'pendente', 'enviado', 'entregue', 'lido', 'respondido', 'erro'
+  mensagem_personalizada TEXT,
+  enviado_em TIMESTAMP,
+  entregue_em TIMESTAMP,
+  lido_em TIMESTAMP,
+  respondido_em TIMESTAMP,
+  erro_motivo TEXT
+);
+
+-- Opt-outs para LGPD
+CREATE TABLE marketing_optouts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  lead_id UUID REFERENCES leads(id) ON DELETE CASCADE,
+  canal VARCHAR NOT NULL, -- 'whatsapp', 'email', 'todos'
+  motivo VARCHAR,
+  data_optout TIMESTAMP DEFAULT NOW()
+);
+```
+
+**Interface de Campanhas:**
+- **Aba "Campanhas"** no dashboard administrativo
+- **Editor de Templates**: Interface visual para criar mensagens
+- **Público-Alvo**: Seleção com filtros avançados e preview da audiência
+- **Agendamento**: Calendário com horários otimizados
+- **Dashboard de Resultados**: Métricas em tempo real (entrega, abertura, conversão)
+
+#### **13.5 IA de Atendimento Pós-N8N**
+
+**Objetivo:** Agente inteligente que recebe leads do N8N e continua atendimento automatizado antes do handoff humano.
+
+**Contexto de Integração:**
+- **Webhook do N8N**: Recebe leads com dados de qualificação
+- **IA Contextualizada**: Conhece histórico completo do lead
+- **Atendimento Continuado**: Responde dúvidas e nutre o interesse
+- **Handoff Inteligente**: Transfere para humano no momento ideal
+
+**Implementação:**
+```typescript
+// Edge Function para receber do N8N
+// supabase/functions/n8n-lead-handoff/index.ts
+interface N8NLeadData {
+  lead_id: string;
+  qualificacao: {
+    interesse_nivel: 'baixo' | 'medio' | 'alto';
+    produtos_interesse: string[];
+    urgencia: 'baixa' | 'media' | 'alta';
+    orcamento_estimado: string;
+  };
+  historico_interacoes: Array<{
+    timestamp: string;
+    canal: string;
+    mensagem: string;
+    resposta: string;
+  }>;
+  próximos_passos: string[];
+}
+
+const processN8NHandoff = async (leadData: N8NLeadData) => {
+  // Atualizar lead com dados do N8N
+  await updateLeadFromN8N(leadData);
+  
+  // Iniciar IA de continuidade
+  await startContinuityAI(leadData);
+  
+  // Agendar handoff humano se necessário
+  if (leadData.qualificacao.interesse_nivel === 'alto') {
+    await scheduleHumanHandoff(leadData.lead_id, 'priority');
+  }
+};
+```
+
+**IA Especializada Pós-N8N:**
+```typescript
+const POST_N8N_AI_PROMPT = `
+Você é Ana, especialista em continuidade de atendimento da ASSISMAX.
+Você recebe leads que já passaram pela qualificação inicial.
+
+CONTEXTO DO LEAD:
+- Interesse: {qualificacao.interesse_nivel}
+- Produtos: {qualificacao.produtos_interesse}
+- Urgência: {qualificacao.urgencia}
+- Orçamento: {qualificacao.orcamento_estimado}
+
+HISTÓRICO COMPLETO:
+{historico_interacoes}
+
+SEU PAPEL:
+1. Nutrir o interesse sem ser invasiva
+2. Esclarecer dúvidas técnicas sobre produtos
+3. Apresentar vantagens do atacarejo
+4. Identificar momento ideal para humano
+5. Manter o lead aquecido até atendimento
+
+GUIDELINES:
+- Use informações do histórico para personalizar
+- Não repita o que já foi dito
+- Foque em agregar valor
+- Seja proativa mas respeitosa
+- Colete feedback contínuo
+
+TOM: Consultiva, experiente, focada em soluções.
+`;
+```
+
+#### **13.6 Agente de Promoções para Leads Convertidos**
+
+**Objetivo:** Sistema autônomo que identifica oportunidades promocionais e engaja clientes ativos automaticamente.
+
+**Funcionalidades Inteligentes:**
+- **Análise de Padrão de Compra**: IA identifica frequência e produtos preferidos
+- **Detecção de Oportunidades**: Momentos ideais para ofertas (aniversários, sazonalidade)
+- **Personalização Automática**: Ofertas baseadas no histórico individual
+- **Cross-sell Inteligente**: Sugestão de produtos complementares
+- **Campanhas Trigger**: Ativação automática baseada em comportamento
+
+**Estrutura de Dados:**
+```sql
+-- Histórico de compras (preparar para fase 2)
+CREATE TABLE compras_historico (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  lead_id UUID REFERENCES leads(id) ON DELETE CASCADE,
+  produtos_comprados JSONB NOT NULL,
+  valor_total DECIMAL(10,2) NOT NULL,
+  data_compra DATE NOT NULL,
+  canal_compra VARCHAR DEFAULT 'whatsapp',
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Ofertas personalizadas
+CREATE TABLE ofertas_personalizadas (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  lead_id UUID REFERENCES leads(id) ON DELETE CASCADE,
+  tipo_oferta VARCHAR NOT NULL, -- 'desconto', 'brinde', 'frete_gratis', 'combo'
+  produtos_oferta JSONB NOT NULL,
+  desconto_percentual DECIMAL(5,2),
+  desconto_valor DECIMAL(10,2),
+  valida_ate DATE NOT NULL,
+  motivo_trigger VARCHAR, -- 'aniversario', 'recompra', 'cross_sell', 'reativacao'
+  status VARCHAR DEFAULT 'ativa', -- 'ativa', 'utilizada', 'expirada', 'recusada'
+  enviada_em TIMESTAMP DEFAULT NOW(),
+  utilizada_em TIMESTAMP
+);
+```
+
+**IA de Promoções:**
+```typescript
+const PROMO_AGENT_PROMPT = `
+Você é Promo, especialista em ofertas personalizadas da ASSISMAX.
+Analise o perfil de cada cliente e crie ofertas irresistíveis.
+
+DADOS DO CLIENTE:
+- Último pedido: {ultimaCompra.data}
+- Produtos preferidos: {produtosFrequentes}
+- Ticket médio: R$ {ticketMedio}
+- Frequência: {frequenciaCompra}
+
+TIPOS DE OFERTAS DISPONÍVEIS:
+1. Desconto progressivo (5% a 15%)
+2. Brinde em compras acima de X
+3. Frete grátis
+4. Combo promocional
+5. Cashback
+
+TRIGGERS INTELIGENTES:
+- Aniversário do cliente
+- 30 dias sem comprar (reativação)
+- Produtos em alta demanda
+- Sazonalidade (festa junina, natal, etc.)
+- Cross-sell baseado em histórico
+
+SEMPRE INCLUA:
+1. Oferta específica e clara
+2. Prazo de validade (urgência)
+3. Justificativa da oferta
+4. Call-to-action direto
+5. Termos simples e honestos
+
+TOM: Entusiasmado, honesto, focado em valor real.
+`;
+
+// Sistema de detecção de oportunidades
+const detectPromoOpportunities = async () => {
+  // Clientes sem comprar há 30+ dias
+  const clientesInativos = await getInactiveCustomers(30);
+  
+  // Aniversariantes do mês
+  const aniversariantes = await getBirthdayCustomers();
+  
+  // Produtos em alta + clientes que compraram similar
+  const crossSellOpportunities = await getCrossSellOpportunities();
+  
+  // Criar ofertas personalizadas
+  await generatePersonalizedOffers([
+    ...clientesInativos,
+    ...aniversariantes,
+    ...crossSellOpportunities
+  ]);
+};
+```
+
+**Interface de Monitoramento:**
+- **Dashboard de Promoções**: Métricas de ofertas enviadas vs utilizadas
+- **Perfis de Cliente**: Análise individual de comportamento de compra
+- **Campanhas Automáticas**: Configuração de triggers e regras
+- **ROI das Ofertas**: Análise de retorno sobre promoções
+
+### **🎯 CRONOGRAMA DE IMPLEMENTAÇÃO DAS NOVAS FUNCIONALIDADES**
+
+#### **Fase 1 - Fundações Avançadas (Semanas 1-2)**
+1. **Chatbot Administrativo**: IA consultora de marketing
+2. **Base do Sistema de Produtos**: CRUD e estrutura de dados
+
+#### **Fase 2 - Gestão e Automação (Semanas 3-4)**
+1. **Interface Completa de Produtos**: Upload, categorização, sync landing
+2. **Edge Function NFe**: Parser XML e sugestões de IA
+3. **Base de Campanhas**: Estrutura para disparo em massa
+
+#### **Fase 3 - Integrações Inteligentes (Semanas 5-6)**
+1. **IA Pós-N8N**: Continuidade de atendimento
+2. **Sistema de Campanhas**: Interface completa com templates
+3. **Agente de Promoções**: IA para ofertas personalizadas
+
+#### **Fase 4 - Otimização e Analytics (Semanas 7-8)**
+1. **Dashboard de Marketing**: Métricas consolidadas
+2. **Relatórios Avançados**: ROI, LTV, segmentação
+3. **Testes A/B**: Sistema de experimentação
+
+### **💡 IMPACTO ESPERADO DAS NOVAS FUNCIONALIDADES**
+
+**Chatbot Administrativo:**
+- Redução de 60% no tempo de análise de métricas
+- Aumento de 40% na eficácia das campanhas
+- Decisões baseadas em dados em tempo real
+
+**Sistema de Produtos:**
+- Catálogo atualizado automaticamente na landing
+- Aumento de 25% na conversão por produtos visíveis
+- Gestão centralizada de estoque e preços
+
+**Disparo em Massa:**
+- Alcance de 100% dos leads convertidos
+- Segmentação inteligente com 35% mais conversão
+- Campanhas automatizadas com ROI 5x maior
+
+**IA Pós-N8N + Agente Promoções:**
+- Nutrição automática de 90% dos leads
+- Reativação de 40% dos clientes inativos
+- Cross-sell automatizado com 20% de sucesso
+
+**ROI Consolidado Estimado:**
+- Receita adicional: +R$ 150.000/mês
+- Redução custos operacionais: 45%
+- Eficiência de conversão: +65%
+- Satisfação cliente: NPS +15 pontos

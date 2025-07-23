@@ -25,7 +25,14 @@
       "mcp__supabase__list_extensions",
       "mcp__supabase__apply_migration",
       "mcp__supabase__list_edge_functions",
-      "Bash(npx:*)"
+      "Bash(npx:*)",
+      "Bash(supabase functions deploy:*)",
+      "mcp__supabase__get_logs",
+      "Bash(timeout 5s npm run dev)",
+      "Bash(timeout 3s npm run dev)",
+      "Bash(start:*)",
+      "Bash(xdg-open:*)",
+      "Bash(supabase functions:*)"
     ],
     "deny": []
   }

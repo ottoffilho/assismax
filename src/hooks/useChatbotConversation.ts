@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { useProductAI } from './useProductAI';
 import {
   assistantPersonality,
   ConversationContext,
@@ -42,6 +43,7 @@ interface ConversationState {
 
 export function useChatbotConversation() {
   const { toast } = useToast();
+  const { getProductResponse, getProductInfo, getAllProducts } = useProductAI();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [conversationState, setConversationState] = useState<ConversationState>({

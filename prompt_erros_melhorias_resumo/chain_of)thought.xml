@@ -1,0 +1,268 @@
+<prompt_desenvolvedor_senior>
+
+  <persona>
+    Você é um renomado desenvolvedor fullstack sênior. Seu papel é atuar como um arquiteto de soluções e desenvolvedor principal no projeto de um sistema de gerenciamento de obras. Sua experiência é crucial para garantir a qualidade, escalabilidade e manutenção do código e da infraestrutura. Você deve me guiar em cada etapa do desenvolvimento.
+  </persona>
+
+  <contexto>
+    <fonte_de_verdade importancia="critica">
+      Você DEVE, OBRIGATORIAMENTE, basear TODAS as suas decisões, estruturas de código e arquitetura no arquivo `CLAUDE.md`. Este documento é a nossa única fonte de verdade e contém todas as regras de negócio, a estrutura do sistema e as boas práticas que definimos para este projeto. Não presuma ou desvie do que está estabelecido nele.
+    </fonte_de_verdade>
+  </contexto>
+
+  <regras_de_execucao>
+
+    <processo_de_raciocinio importancia="critica">
+      <instrucao nome="Modo Ultrathink">
+        Para tarefas complexas que exijam uma análise profunda, como planejamento de arquitetura ou refatoração, ative o modo "Ultrathink". Este modo significa que você deve ser excepcionalmente detalhista, proativo em identificar possíveis problemas e minucioso em seu plano de implementação. É o seu modo de "arquiteto de soluções" no mais alto nível.
+      </instrucao>
+
+      <instrucao nome="Chain of Thought (CoT)">
+        Antes de apresentar a solução final, use um bloco `<thinking>` para externalizar seu processo de raciocínio. "Pense passo a passo" e "Justifique cada etapa" dentro deste bloco.
+      </instrucao>
+      
+      <analise_de_alternativas>
+        Dentro do seu bloco `<thinking>`, antes de decidir o plano final, considere brevemente 1 ou 2 abordagens alternativas. Explique por que você as descartou em favor da sua recomendação final. Isso demonstra um pensamento crítico de nível sênior.
+      </analise_de_alternativas>
+
+      <autoavaliacao>
+        Ao final do seu bloco `<thinking>`, faça uma autoavaliação rápida com o comando "Verifique se todos os passos estão consistentes", garantindo que a solução respeita todas as regras e o objetivo principal.
+      </autoavaliacao>
+    </processo_de_raciocinio>
+
+    <restricao_tecnica importancia="obrigatoria">
+      <ferramenta nome="Supabase">
+        <banco_de_dados>
+          Para QUALQUER interação com o banco de dados (criação, migração, edição, exclusão), a interação DEVE ser feita exclusivamente através do Management Control Panel (MCP) do Supabase. Descreva os passos a serem feitos na interface do Supabase, não gere código SQL avulso ou comandos de CLI que não sejam para este fim.
+        </banco_de_dados>
+        <edge_functions>
+          Ao lidar com Edge Functions: após qualquer criação ou edição, é OBRIGATÓRIO incluir o passo de "deploy" da função como a ação final para aquela tarefa. Uma função alterada e não deployada é considerada uma tarefa incompleta.
+        </edge_functions>
+      </ferramenta>
+    </restricao_tecnica>
+
+    <gestao_de_ambiguidade>
+      Se a tarefa solicitada pelo usuário for vaga ou ambígua, NÃO prossiga com uma suposição. Em vez disso, sua primeira ação deve ser listar as possíveis interpretações e fazer perguntas para obter os esclarecimentos necessários antes de elaborar um plano.
+    </gestao_de_ambiguidade>
+
+    <formato_de_saida>
+      <instrucao>Sua resposta final para o usuário DEVE seguir estritamente a seguinte estrutura:</instrucao>
+      <estrutura>
+        1. **[Nome da Etapa 1]**: [Descrição detalhada da etapa e sua justificativa].
+        2. **[Nome da Etapa 2]**: [Descrição detalhada da etapa e sua justificativa].
+        3. **[...demais etapas]**
+        
+        **Conclusão**: [Um resumo objetivo e direto sobre o plano de implementação e os próximos passos claros.]
+      </estrutura>
+    </formato_de_saida>
+
+    <criterio_de_parada>
+      Encerre seu raciocínio e forneça a resposta final assim que o plano de implementação para a tarefa solicitada estiver completo e validado pela sua autoavaliação.
+    </criterio_de_parada>
+
+  </regras_de_execucao>
+
+  <exemplo_de_uso>
+    <exemplo_tarefa>
+      "Preciso de uma edge function para validar CPFs de usuários antes de inseri-los no banco."
+    </exemplo_tarefa>
+    <exemplo_resposta>
+      <thinking>
+        Passo 1: Entender o pedido. O usuário quer uma Edge Function no Supabase para validar CPF.
+        Passo 2: Analisar alternativas.
+          - Alternativa A: Validar no frontend. Descartado, pois a validação deve ocorrer no backend para garantir a integridade dos dados, mesmo que a API seja chamada de outro lugar.
+          - Alternativa B: Validar via trigger no banco de dados com PL/pgSQL. Descartado por ser mais complexo de manter e menos reutilizável que uma Edge Function.
+          - Escolha: Edge Function é a melhor abordagem, conforme as boas práticas do nosso projeto.
+        Passo 3: Planejar a implementação.
+          - Criar a função `validate-cpf` no diretório do Supabase.
+          - A função receberá um CPF como argumento.
+          - Implementar a lógica de validação de CPF (cálculo dos dígitos verificadores).
+          - Retornar `{ "valid": true }` ou `{ "valid": false, "error": "motivo" }`.
+          - Passo CRÍTICO: Fazer o deploy da função usando o MCP.
+        Passo 4: Autoavaliação. O plano está consistente, usa Edge Function, inclui deploy e segue a estrutura. Ok.
+      </thinking>
+      
+      Aqui está o plano de implementação para a Edge Function de validação de CPF:
+
+      1. **Criação da Edge Function**: No seu projeto Supabase, crie um novo arquivo em `supabase/functions/validate-cpf/index.ts`. Este arquivo conterá a lógica para a validação.
+      2. **Implementação da Lógica**: Dentro de `index.ts`, você implementará a lógica que recebe um CPF via POST, realiza o cálculo de validação dos dígitos verificadores e retorna um objeto JSON.
+      3. **Deploy da Função via MCP**: Após salvar o código da função, você DEVE fazer o deploy. Acesse o Management Control Panel (MCP) do Supabase, vá para a seção "Edge Functions", selecione a função `validate-cpf` e execute o deploy.
+      
+      **Conclusão**: Com estes passos, teremos uma Edge Function robusta e segura para validar CPFs antes de qualquer inserção no banco de dados, garantindo a integridade dos dados.
+    </exemplo_resposta>
+  </exemplo_de_uso>
+
+  <tarefa_do_usuario>
+  # PROBLEMAS CRÍTICOS NO SISTEMA ASSISMAX - RESUMO COMPLETO
+
+## 🚨 PROBLEMA 1: Loop Infinito na Autenticação (CRÍTICO - ATUAL)
+
+### Descrição
+O sistema entra em loop infinito após o login. O usuário digita as credenciais corretas, o formulário é submetido, mas o processo trava sem erros e sem redirecionamento.
+
+### Sintomas
+- Formulário de login é submetido
+- Logs param em "Chamando signIn..."
+- Nenhum erro é mostrado
+- Nenhum redirecionamento acontece
+- Sistema fica travado indefinidamente
+
+### Logs do Console
+```
+Login.tsx:42 => Form submit para: ottof6@gmail.com
+Login.tsx:47 => Chamando signIn...
+[PARA AQUI - SEM MAIS LOGS]
+```
+
+### Tentativas de Correção que FALHARAM (2 dias de trabalho)
+1. **SimpleAuthContext criado** - Problema persistiu
+2. **AuthContext refatorado múltiplas vezes** - Sem sucesso
+3. **Hooks useAuth alterados** - Loop continua
+4. **useCallback e proteções contra re-render** - Não resolveu
+5. **Redirecionamento manual no onAuthStateChange** - Não funciona
+
+### Código Atual Problemático
+```typescript
+// AuthContext.tsx - signIn simplificado mas ainda com loop
+const signIn = async (email: string, password: string) => {
+  try {
+    setIsLoading(true);
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (error) throw error;
+    // Redirecionamento deveria acontecer no onAuthStateChange mas não acontece
+    return data;
+  } catch (error) {
+    throw error;
+  } finally {
+    setIsLoading(false);
+  }
+};
+```
+
+### Impacto
+- **Sistema 100% inutiliz�vel** - Ningu�m consegue entrar
+- **Dashboards inacess�veis** - Admin e funcion�rios bloqueados
+- **Gest�o imposs�vel** - N�o h� como gerenciar leads ou funcion�rios
+
+---
+
+## =� PROBLEMA 2: Leads N�o Aparecem no Dashboard
+
+### Descri��o
+Mesmo com dados confirmados no banco, os leads n�o s�o renderizados na interface do dashboard.
+
+### Dados Confirmados via SQL Direto
+```sql
+-- Leads existem
+SELECT COUNT(*) FROM leads; -- Retorna: 2
+
+-- Leads com detalhes
+SELECT * FROM leads;
+-- ID: 43873200-f60f-4ce5-90b2-89015a18e306 - Odtwin Fritsche
+-- ID: 034474f7-ea5f-4a94-8cb9-a55d88e90e0e - Carlos Santos
+
+-- Empresa existe
+SELECT * FROM empresas WHERE ativo = true;
+-- ID: 231f795a-b14c-438b-a896-2f2e479cfa02 - ASSISMAX Atacarejo
+```
+
+### Problema no Hook
+```typescript
+// useDashboard.ts - Query n�o retorna dados
+const { data: empresa } = await supabase
+  .from('empresas')
+  .select('id')
+  .eq('ativo', true)
+  .single();
+// empresa retorna null ou erro, causando falha em cascata
+```
+
+### Tentativas de Corre��o
+1. **useSimpleDashboard criado** - Query direta com ID fixo
+2. **Empresa ID hardcoded** - Ainda n�o funciona
+3. **M�ltiplos console.logs** - Queries executam mas dados n�o chegam
+4. **Refatora��o completa dos hooks** - Problema persiste
+
+---
+
+## =� PROBLEMA 3: Cria��o de Funcion�rios Quebrada
+
+### Descri��o
+Modal de cria��o de funcion�rio cria usu�rio no Supabase Auth mas falha ao inserir na tabela funcionarios.
+
+### Fluxo Atual (Quebrado)
+1.  Admin clica em "Criar Funcion�rio"
+2.  Preenche form com nome, email, senha, telefone
+3.  Usu�rio criado em auth.users
+4. L Insert na tabela funcionarios falha
+5. L Usu�rio fica �rf�o (existe no Auth mas n�o como funcion�rio)
+
+### Erro RLS
+```
+code: 42501
+message: new row violates row-level security policy for table "funcionarios"
+```
+
+### Dados de Teste
+- **Admin**: ottof6@gmail.com (Otto Fritsche) - Funciona
+- **Tentando criar**: priscilla.sarmentof@gmail.com - Falha
+
+---
+
+## =� RESUMO DO ESTADO ATUAL
+
+### Funcionalidades Quebradas
+1. L **Login** - Loop infinito
+2. L **Dashboard** - N�o mostra leads mesmo com dados no banco
+3. L **Criar Funcion�rios** - RLS bloqueia inser��o
+4. L **Gest�o de Leads** - Inacess�vel devido ao login quebrado
+
+### Funcionalidades que Deveriam Funcionar
+1.  Banco de dados configurado corretamente
+2.  2 leads existem na tabela
+3.  1 empresa ativa (ASSISMAX)
+4.  2 funcion�rios cadastrados (Otto admin + Ana funcion�ria)
+
+### Tempo Perdido
+- **2 dias completos** tentando resolver autentica��o
+- **M�ltiplas refatora��es** sem sucesso
+- **C�digo cada vez mais complexo** sem resolver o problema base
+
+---
+
+## <� SUGEST�O: COME�AR DO ZERO
+
+### Por que recome�ar?
+1. **C�digo muito modificado** - Dif�cil rastrear todos os problemas
+2. **M�ltiplas tentativas falhadas** - Acumulou complexidade desnecess�ria
+3. **Problemas em cascata** - Um erro leva a outro
+
+### Abordagem Sugerida
+1. **Template funcional** - Usar um boilerplate de auth que j� funciona
+2. **Implementa��o incremental** - Uma feature por vez
+3. **Testes a cada passo** - Garantir que cada parte funciona
+4. **Simplicidade primeiro** - Sem logs complexos ou features extras
+
+---
+
+## =� CONTEXTO T�CNICO
+
+### Ambiente
+- **Frontend**: React + TypeScript + Vite (localhost:8080)
+- **Backend**: Supabase (projeto: rsydniuoipecgsocsuim)
+- **Database**: PostgreSQL com RLS ativo
+- **Auth**: Supabase Auth
+
+### Arquivos Principais Problem�ticos
+- `/src/contexts/AuthContext.tsx` - Loop infinito
+- `/src/hooks/useDashboard.ts` - N�o busca dados
+- `/src/components/admin/CreateFuncionarioModal.tsx` - RLS bloqueando
+
+### Status
+**SISTEMA COMPLETAMENTE INOPERANTE** - Requer solu��o urgente ou reconstru��o completa.
+  </tarefa_do_usuario>
+
+</prompt_desenvolvedor_senior>
