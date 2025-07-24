@@ -4,21 +4,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { 
-  Users, 
-  TrendingUp, 
-  MessageSquare, 
-  Target, 
-  RefreshCw, 
+import {
+  Users,
+  TrendingUp,
+  MessageSquare,
+  Target,
+  RefreshCw,
   ArrowLeft,
   Calendar,
-  BarChart3,
-  Download,
   LogOut,
   UserPlus,
-  FileText,
   Activity,
-  Package
+  Package,
+  FileText,
+  Download,
+  BarChart3,
+  PieChart
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
@@ -34,6 +35,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { DonutChart } from '@/components/dashboard/charts/DonutChart';
 import { BarChart } from '@/components/dashboard/charts/BarChart';
 import { LineChart } from '@/components/dashboard/charts/LineChart';
+import AdminChatbotModal from '@/components/admin/AdminChatbotModal';
 
 export default function AdminDashboard() {
   const { metrics, isLoadingMetrics, metricsError } = useDashboard();
@@ -41,6 +43,7 @@ export default function AdminDashboard() {
   const { leads: simpleLeads, isLoading: simpleLoading, error: simpleError } = useSimpleDashboard();
   const { funcionario, signOut } = useAuth();
   const navigate = useNavigate();
+  const [chatbotOpen, setChatbotOpen] = useState(false);
   
   // Ler tab da URL
   const location = useLocation();
@@ -155,7 +158,8 @@ export default function AdminDashboard() {
   })) || [];
 
   return (
-    <DashboardLayout>
+    <>
+    <DashboardLayout onChatbotToggle={() => setChatbotOpen(true)}>
       <div className="p-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -177,7 +181,7 @@ export default function AdminDashboard() {
           </div>
         </div>
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-white shadow-soft">
+          <TabsList className="grid w-full grid-cols-5 bg-white shadow-soft">
             <TabsTrigger value="overview" className="data-[state=active]:bg-accent data-[state=active]:text-primary">
               <Activity className="w-4 h-4 mr-2" />
               Visão Geral
@@ -190,13 +194,13 @@ export default function AdminDashboard() {
               <UserPlus className="w-4 h-4 mr-2" />
               Funcionários
             </TabsTrigger>
-            <TabsTrigger value="produtos" className="data-[state=active]:bg-accent data-[state=active]:text-primary">
-              <Package className="w-4 h-4 mr-2" />
-              Produtos
-            </TabsTrigger>
             <TabsTrigger value="relatorios" className="data-[state=active]:bg-accent data-[state=active]:text-primary">
               <FileText className="w-4 h-4 mr-2" />
               Relatórios
+            </TabsTrigger>
+            <TabsTrigger value="produtos" className="data-[state=active]:bg-accent data-[state=active]:text-primary">
+              <Package className="w-4 h-4 mr-2" />
+              Produtos
             </TabsTrigger>
           </TabsList>
 
@@ -210,7 +214,7 @@ export default function AdminDashboard() {
                 description="Captados nas últimas 24h"
                 icon={<Users />}
                 color="info"
-                trend={{ value: 15, type: 'up' }}
+                trend={metrics?.tendencias?.leadsHoje}
               />
               <MetricCard
                 title="Leads esta Semana"
@@ -218,7 +222,7 @@ export default function AdminDashboard() {
                 description="Últimos 7 dias"
                 icon={<TrendingUp />}
                 color="success"
-                trend={{ value: 8, type: 'up' }}
+                trend={metrics?.tendencias?.leadsSemana}
               />
               <MetricCard
                 title="Taxa de Conversão"
@@ -226,7 +230,7 @@ export default function AdminDashboard() {
                 description="Leads → Clientes"
                 icon={<Target />}
                 color="warning"
-                trend={{ value: 3, type: 'down' }}
+                trend={metrics?.tendencias?.taxaConversao}
               />
               <MetricCard
                 title="Total de Leads"
@@ -332,89 +336,129 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
+          {/* FUNCIONÁRIOS */}
+          <TabsContent value="funcionarios" className="space-y-6 animate-fade-in-up">
+            <FuncionariosManager />
+          </TabsContent>
+
           {/* RELATÓRIOS */}
           <TabsContent value="relatorios" className="space-y-6 animate-fade-in-up">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-bold">Relatórios e Analytics</h2>
+                <h2 className="text-2xl font-bold">Relatórios</h2>
                 <p className="text-muted-foreground">
-                  Análise detalhada de performance e métricas
+                  Análises detalhadas e exportação de dados
                 </p>
               </div>
               <Button variant="outline">
                 <Download className="w-4 h-4 mr-2" />
-                Exportar Relatório
+                Exportar Dados
               </Button>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-3">
-              <MetricCard
-                title="Leads este Mês"
-                value={isLoadingMetrics ? '...' : metrics?.leadsMes || 0}
-                description="Últimos 30 dias"
-                icon={<BarChart3 />}
-                color="info"
-              />
-              <MetricCard
-                title="Taxa de Captação"
-                value={isLoadingMetrics ? '...' : `${((metrics?.leadsMes || 0) / 30).toFixed(1)}/dia`}
-                description="Média diária"
-                icon={<TrendingUp />}
-                color="default"
-              />
-              <MetricCard
-                title="Leads Convertidos"
-                value={isLoadingMetrics ? '...' : 
-                  metrics?.leadsPorStatus?.find(s => s.status === 'convertido')?.total || 0
-                }
-                description="Total convertidos"
-                icon={<Target />}
-                color="success"
-                trend={{ value: 12, type: 'up' }}
-              />
+            {/* Relatórios de Performance */}
+            <div className="grid gap-6 lg:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5" />
+                    Performance por Período
+                  </CardTitle>
+                  <CardDescription>
+                    Análise de leads captados e convertidos
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <BarChart
+                    data={weeklyLeadsData}
+                    bars={[
+                      { dataKey: 'leads', name: 'Leads Captados', color: '#3B82F6' },
+                      { dataKey: 'conversoes', name: 'Conversões', color: '#10B981' }
+                    ]}
+                    title="Últimos 7 dias"
+                    description="Comparativo de captação vs conversão"
+                  />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <PieChart className="w-5 h-5" />
+                    Distribuição por Status
+                  </CardTitle>
+                  <CardDescription>
+                    Análise do funil de vendas
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <DonutChart
+                    data={leadStatusChartData}
+                    title="Status dos Leads"
+                    description="Distribuição atual do pipeline"
+                  />
+                </CardContent>
+              </Card>
             </div>
 
-            <Card className="shadow-soft">
+            {/* Métricas Detalhadas */}
+            <Card>
               <CardHeader>
-                <CardTitle>Relatórios Disponíveis</CardTitle>
+                <CardTitle>Métricas Detalhadas</CardTitle>
                 <CardDescription>
-                  Selecione o tipo de relatório para gerar
+                  Indicadores de performance do sistema
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <Button variant="outline" className="h-auto p-4 justify-start">
-                    <div className="text-left">
-                      <p className="font-semibold">Relatório de Vendas</p>
-                      <p className="text-sm text-muted-foreground">Análise de conversões e faturamento</p>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                  <div className="p-4 border rounded-lg">
+                    <div className="text-2xl font-bold text-blue-600">
+                      {metrics?.leadsTotal || 0}
                     </div>
-                  </Button>
-                  <Button variant="outline" className="h-auto p-4 justify-start">
-                    <div className="text-left">
-                      <p className="font-semibold">Relatório de Leads</p>
-                      <p className="text-sm text-muted-foreground">Origem, status e distribuição</p>
+                    <div className="text-sm text-muted-foreground">Total de Leads</div>
+                  </div>
+                  <div className="p-4 border rounded-lg">
+                    <div className="text-2xl font-bold text-green-600">
+                      {metrics?.taxaConversao || 0}%
                     </div>
-                  </Button>
-                  <Button variant="outline" className="h-auto p-4 justify-start">
-                    <div className="text-left">
-                      <p className="font-semibold">Performance da Equipe</p>
-                      <p className="text-sm text-muted-foreground">Métricas por funcionário</p>
+                    <div className="text-sm text-muted-foreground">Taxa de Conversão</div>
+                  </div>
+                  <div className="p-4 border rounded-lg">
+                    <div className="text-2xl font-bold text-yellow-600">
+                      {metrics?.leadsSemana || 0}
                     </div>
-                  </Button>
-                  <Button variant="outline" className="h-auto p-4 justify-start">
-                    <div className="text-left">
-                      <p className="font-semibold">Análise de Canais</p>
-                      <p className="text-sm text-muted-foreground">ROI por canal de captação</p>
+                    <div className="text-sm text-muted-foreground">Leads esta Semana</div>
+                  </div>
+                  <div className="p-4 border rounded-lg">
+                    <div className="text-2xl font-bold text-purple-600">
+                      {metrics?.leadsHoje || 0}
                     </div>
-                  </Button>
+                    <div className="text-sm text-muted-foreground">Leads Hoje</div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
 
-          {/* FUNCIONÁRIOS */}
-          <TabsContent value="funcionarios" className="space-y-6 animate-fade-in-up">
-            <FuncionariosManager />
+            {/* Tendência de Conversão */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Tendência de Conversão</CardTitle>
+                <CardDescription>
+                  Evolução da performance ao longo do tempo
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <LineChart
+                  data={conversionTrendData}
+                  lines={[
+                    { dataKey: 'taxa', name: 'Taxa de Conversão (%)', color: '#8B5CF6' }
+                  ]}
+                  title="Últimas 6 semanas"
+                  description="Evolução da taxa de conversão"
+                  showArea
+                />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* PRODUTOS */}
@@ -424,5 +468,12 @@ export default function AdminDashboard() {
         </Tabs>
       </div>
     </DashboardLayout>
+
+    {/* Chatbot Modal */}
+    <AdminChatbotModal 
+      open={chatbotOpen} 
+      onOpenChange={setChatbotOpen}
+    />
+    </>
   );
 }

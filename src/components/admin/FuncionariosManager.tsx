@@ -52,6 +52,7 @@ interface Funcionario {
   telefone: string | null;
   nivel_acesso: 'admin' | 'funcionario';
   ativo: boolean;
+  user_id: string;
   created_at: string;
 }
 

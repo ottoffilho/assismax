@@ -110,19 +110,11 @@ export default function Setup() {
     setIsLoading(true);
 
     try {
-      // Dados fixos da ASSISMAX (empresa exclusiva)
-      const empresaData = {
-        nome: 'ASSISMAX Atacarejo',
-        telefone: '(61) 3333-4444',
-        email: 'contato@assismax.com.br',
-        endereco: 'Valparaíso de Goiás - GO'
-      };
-
-      // Chamar Edge Function para setup automatizado
-      console.log('Enviando dados para Edge Function:', { empresaData, adminData });
+      // Chamar Edge Function para setup automatizado (sem empresaData)
+      console.log('Enviando dados para Edge Function:', { adminData });
 
       const { data, error } = await supabase.functions.invoke('initial-setup', {
-        body: { empresaData, adminData }
+        body: { adminData }
       });
 
       console.log('Resposta da Edge Function:', { data, error });
@@ -187,7 +179,7 @@ export default function Setup() {
             <h3 className="font-semibold">ASSISMAX Atacarejo</h3>
           </div>
           <p className="text-sm text-muted-foreground">
-            Valparaíso de Goiás - GO • Atacarejo especializado em produtos básicos
+            Sistema de Gestão de Leads • Valparaíso de Goiás - GO
           </p>
         </div>
 

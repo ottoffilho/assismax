@@ -3,9 +3,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, X, RefreshCw, ShoppingCart, Coffee, Package } from "lucide-react";
+import { Send, X, RefreshCw, ShoppingCart, Coffee, Package, Bot } from "lucide-react";
 import logoAssis from "@/assets/logo/logo.png";
 import { useChatbotConversation } from "@/hooks/useChatbotConversation";
+import './ChatbotModal.css';
 
 interface ChatbotModalProps {
   open: boolean;
@@ -99,28 +100,35 @@ export default function ChatbotModal({ open, onOpenChange }: ChatbotModalProps) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] h-[600px] p-0 flex flex-col">
-        <DialogHeader className="px-4 py-3 border-b bg-primary text-white rounded-t-lg">
+      <DialogContent className="sm:max-w-[425px] h-[600px] p-0 flex flex-col bg-card border-border shadow-strong">
+        <DialogHeader className="px-4 py-4 border-b border-border bg-gradient-primary text-primary-foreground rounded-t-lg">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="relative">
-                <img
-                  src={logoAssis}
-                  alt="Assis"
-                  className="w-10 h-10 rounded-full bg-white p-1"
-                />
-                <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
+                <div className="w-12 h-12 rounded-full bg-white border border-primary-foreground/20 flex items-center justify-center p-1">
+                  <img
+                    src={logoAssis}
+                    alt="Assis"
+                    className="w-8 h-8 object-contain"
+                  />
+                </div>
+                <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-success border-2 border-primary-foreground rounded-full flex items-center justify-center">
+                  <span className="w-2 h-2 bg-primary-foreground rounded-full online-indicator"></span>
+                </span>
               </div>
               <div>
-                <DialogTitle className="text-white font-semibold">Assis - Dono da AssisMax</DialogTitle>
-                <p className="text-xs text-white/80">Online agora • Responde rápido</p>
+                <DialogTitle className="text-primary-foreground font-semibold text-base">Assis - Dono da AssisMax</DialogTitle>
+                <p className="text-xs text-primary-foreground/80 flex items-center gap-1">
+                  <span className="w-2 h-2 bg-success rounded-full"></span>
+                  Online agora • Responde rápido
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-1">
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 text-white hover:bg-white/20"
+                className="h-8 w-8 text-primary-foreground hover:bg-primary-foreground/20 chatbot-button"
                 onClick={() => {
                   resetConversation();
                   setTimeout(() => startConversation(), 100);
@@ -132,8 +140,9 @@ export default function ChatbotModal({ open, onOpenChange }: ChatbotModalProps) 
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 text-white hover:bg-white/20"
+                className="h-8 w-8 text-primary-foreground hover:bg-primary-foreground/20 chatbot-button"
                 onClick={() => onOpenChange(false)}
+                title="Fechar chat"
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -142,34 +151,36 @@ export default function ChatbotModal({ open, onOpenChange }: ChatbotModalProps) 
         </DialogHeader>
 
         <>
-            <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+            <ScrollArea className="flex-1 p-4 bg-background chatbot-scroll" ref={scrollAreaRef}>
               <div className="space-y-4">
                 {messages.map((message) => {
                   // Não renderiza mensagens vazias que não estão sendo digitadas
                   if (!message.content && !message.isTyping) return null;
-                  
+
                   return (
                     <div
                       key={message.id}
                       className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in-up`}
                     >
                       {message.sender === 'bot' && (
-                        <img
-                          src={logoAssis}
-                          alt="Assis"
-                          className="w-8 h-8 rounded-full bg-gray-100 p-1 mr-2 flex-shrink-0"
-                        />
+                        <div className="w-8 h-8 rounded-full bg-white border border-border flex items-center justify-center mr-2 flex-shrink-0 p-1">
+                          <img
+                            src={logoAssis}
+                            alt="Assis"
+                            className="w-5 h-5 object-contain"
+                          />
+                        </div>
                       )}
                       <div
-                        className={`max-w-[80%] rounded-2xl px-4 py-2 ${
+                        className={`max-w-[80%] rounded-2xl px-4 py-3 ${
                           message.sender === 'user'
-                            ? 'bg-primary text-white rounded-br-sm'
-                            : 'bg-gray-100 text-gray-800 rounded-bl-sm'
+                            ? 'user-message text-primary-foreground rounded-br-sm'
+                            : 'bot-message text-card-foreground rounded-bl-sm'
                         }`}
                       >
-                        <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                        <p className={`text-xs mt-1 ${
-                          message.sender === 'user' ? 'text-white/70' : 'text-gray-500'
+                        <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                        <p className={`text-xs mt-2 ${
+                          message.sender === 'user' ? 'text-primary-foreground/70' : 'text-muted-foreground'
                         }`}>
                           {formatTime(message.timestamp)}
                         </p>
@@ -179,16 +190,18 @@ export default function ChatbotModal({ open, onOpenChange }: ChatbotModalProps) 
                 })}
                 {isTyping && (
                   <div className="flex justify-start animate-fade-in">
-                    <img
-                      src={logoAssis}
-                      alt="Assis"
-                      className="w-8 h-8 rounded-full bg-gray-100 p-1 mr-2 flex-shrink-0"
-                    />
-                    <div className="bg-gray-100 rounded-2xl px-4 py-2 rounded-bl-sm">
-                      <div className="flex gap-1">
-                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                    <div className="w-8 h-8 rounded-full bg-white border border-border flex items-center justify-center mr-2 flex-shrink-0 p-1">
+                      <img
+                        src={logoAssis}
+                        alt="Assis"
+                        className="w-5 h-5 object-contain"
+                      />
+                    </div>
+                    <div className="bot-message rounded-2xl px-4 py-3 rounded-bl-sm">
+                      <div className="flex gap-1 items-center">
+                        <span className="w-2 h-2 bg-muted-foreground rounded-full typing-dot-1"></span>
+                        <span className="w-2 h-2 bg-muted-foreground rounded-full typing-dot-2"></span>
+                        <span className="w-2 h-2 bg-muted-foreground rounded-full typing-dot-3"></span>
                       </div>
                     </div>
                   </div>
@@ -198,7 +211,7 @@ export default function ChatbotModal({ open, onOpenChange }: ChatbotModalProps) 
               </div>
             </ScrollArea>
 
-            <div className="border-t p-4">
+            <div className="border-t border-border bg-card p-4">
               <div className="flex gap-2">
                 <Textarea
                   ref={textareaRef}
@@ -206,19 +219,19 @@ export default function ChatbotModal({ open, onOpenChange }: ChatbotModalProps) 
                   onChange={(e) => setInputMessage(e.target.value)}
                   onKeyPress={handleKeyPress}
                   placeholder={getPlaceholder()}
-                  className="resize-none"
+                  className="resize-none border-border bg-background text-foreground placeholder:text-muted-foreground focus:ring-accent focus:border-accent"
                   rows={1}
                   disabled={isTyping}
                 />
                 <Button
                   onClick={handleSendMessage}
                   disabled={!inputMessage.trim() || isTyping}
-                  className="px-3"
+                  className="px-3 bg-primary hover:bg-primary-hover text-primary-foreground shadow-soft chatbot-button disabled:opacity-50"
                 >
                   <Send className="h-4 w-4" />
                 </Button>
               </div>
-              <p className="text-xs text-gray-500 mt-2 text-center">
+              <p className="text-xs text-muted-foreground mt-2 text-center">
                 Pressione Enter para enviar
               </p>
             </div>

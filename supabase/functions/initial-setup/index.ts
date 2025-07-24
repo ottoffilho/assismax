@@ -31,13 +31,14 @@ serve(async (req) => {
         .from('funcionarios')
         .select('id')
         .eq('ativo', true)
+        .eq('nivel_acesso', 'admin')
         .limit(1)
 
       if (funcionariosError) {
         throw funcionariosError
       }
 
-      // Setup é considerado concluído se há pelo menos um funcionário ativo
+      // Setup é considerado concluído se há pelo menos um admin ativo
       const setupCompleted = funcionarios && funcionarios.length > 0
 
       return new Response(
@@ -55,16 +56,15 @@ serve(async (req) => {
     if (req.method === 'POST') {
       // Perform initial setup
       const body = await req.json()
-      const { empresaData, adminData } = body
+      const { adminData } = body // Removido empresaData - não é mais necessário
 
       console.log('Dados recebidos:', { 
-        empresa: empresaData ? { nome: empresaData.nome, email: empresaData.email } : null,
         admin: adminData ? { nome: adminData.nome, email: adminData.email } : null 
       })
 
-      if (!empresaData || !adminData) {
+      if (!adminData) {
         return new Response(
-          JSON.stringify({ error: 'Dados da empresa e admin são obrigatórios' }),
+          JSON.stringify({ error: 'Dados do administrador são obrigatórios' }),
           {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 400,
@@ -86,64 +86,15 @@ serve(async (req) => {
       // Start transaction-like operations
       let authData = null
       try {
-        // 1. Update/Create company (check if exists first)
-        console.log('Verificando empresa existente...')
-        let empresa
-        const { data: existingEmpresa } = await supabaseAdmin
-          .from('empresas')
-          .select('*')
-          .eq('slug', 'assismax')
-          .single()
-
-        if (existingEmpresa) {
-          console.log('Atualizando empresa existente...')
-          const { data: updatedEmpresa, error: empresaError } = await supabaseAdmin
-            .from('empresas')
-            .update({
-              nome: empresaData.nome,
-              telefone: empresaData.telefone,
-              email: empresaData.email,
-              endereco: empresaData.endereco || '',
-              ativo: true
-            })
-            .eq('slug', 'assismax')
-            .select()
-            .single()
-          
-          if (empresaError) {
-            console.error('Erro ao atualizar empresa:', empresaError)
-            throw empresaError
-          }
-          empresa = updatedEmpresa
-        } else {
-          console.log('Criando nova empresa...')
-          const { data: newEmpresa, error: empresaError } = await supabaseAdmin
-            .from('empresas')
-            .insert({
-              nome: empresaData.nome,
-              slug: 'assismax',
-              telefone: empresaData.telefone,
-              email: empresaData.email,
-              endereco: empresaData.endereco || '',
-              ativo: true
-            })
-            .select()
-            .single()
-          
-          if (empresaError) {
-            console.error('Erro ao criar empresa:', empresaError)
-            throw empresaError
-          }
-          empresa = newEmpresa
-        }
-        console.log('Empresa configurada:', empresa)
-
-        // 2. Create admin user in Auth
+        // 1. Create admin user in Auth
         console.log('Criando usuário no Auth...', { email: adminData.email })
         const { data: authResult, error: authError } = await supabaseAdmin.auth.admin.createUser({
           email: adminData.email,
           password: adminData.senha,
-          email_confirm: true
+          email_confirm: true,
+          user_metadata: {
+            nome: adminData.nome
+          }
         })
 
         if (authError) {
@@ -153,7 +104,7 @@ serve(async (req) => {
         authData = authResult
         console.log('Usuário criado no Auth:', authData.user?.id)
 
-        // 3. Check if funcionario already exists and deactivate if needed
+        // 2. Check if funcionario already exists
         const { data: existingFuncionario } = await supabaseAdmin
           .from('funcionarios')
           .select('id, ativo')
@@ -161,14 +112,14 @@ serve(async (req) => {
           .single()
 
         if (existingFuncionario) {
-          console.log('Funcionário já existe, reativando...')
+          console.log('Funcionário já existe, atualizando...')
           const { error: updateError } = await supabaseAdmin
             .from('funcionarios')
             .update({
               nome: adminData.nome,
               telefone: adminData.telefone || '',
               nivel_acesso: 'admin',
-              empresa_id: empresa.id,
+              user_id: authData.user.id, // IMPORTANTE: Vincular user_id
               ativo: true
             })
             .eq('email', adminData.email)
@@ -183,7 +134,7 @@ serve(async (req) => {
           console.log('Criando funcionário...', {
             nome: adminData.nome,
             email: adminData.email,
-            empresa_id: empresa.id
+            user_id: authData.user.id
           })
           const { error: funcionarioError } = await supabaseAdmin
             .from('funcionarios')
@@ -192,7 +143,7 @@ serve(async (req) => {
               email: adminData.email,
               telefone: adminData.telefone || '',
               nivel_acesso: 'admin',
-              empresa_id: empresa.id,
+              user_id: authData.user.id, // IMPORTANTE: Vincular user_id
               ativo: true
             })
 
@@ -203,11 +154,12 @@ serve(async (req) => {
           console.log('Funcionário criado com sucesso')
         }
 
-        // 4. Deactivate test users
+        // 3. Deactivate test users (se existirem)
         await supabaseAdmin
           .from('funcionarios')
           .update({ ativo: false })
           .in('email', ['admin@assismax.com.br', 'funcionario@assismax.com.br'])
+          .neq('email', adminData.email) // Não desativar o admin que acabamos de criar
 
         return new Response(
           JSON.stringify({

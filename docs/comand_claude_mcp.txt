@@ -1,0 +1,1 @@
+claude mcp add-from-claude-desktop

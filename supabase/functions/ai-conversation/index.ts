@@ -23,11 +23,54 @@ interface ConversationRequest {
   };
 }
 
+// Função para buscar TODOS os produtos reais cadastrados
+async function getAllProdutos() {
+  const { data, error } = await supabase
+    .from('produtos')
+    .select('nome, categoria, descricao, preco_varejo, preco_atacado, estoque')
+    .eq('ativo', true)
+    .order('nome', { ascending: true });
+
+  if (error) {
+    console.error('Erro ao buscar produtos:', error);
+    return [];
+  }
+
+  console.log('Produtos encontrados:', data?.length || 0);
+  return data || [];
+}
+
+// Função para buscar produtos específicos por termo
+async function searchProdutos(query: string, limit: number = 10) {
+  const searchTerms = query.toLowerCase().split(' ').filter(term => term.length > 2);
+
+  // Se não há termos de busca específicos, retorna todos os produtos
+  if (searchTerms.length === 0) {
+    return await getAllProdutos();
+  }
+
+  // Busca na tabela produtos real
+  const { data, error } = await supabase
+    .from('produtos')
+    .select('nome, categoria, descricao, preco_varejo, preco_atacado, estoque')
+    .eq('ativo', true)
+    .or(`nome.ilike.%${searchTerms.join('%')}, categoria.ilike.%${searchTerms.join('%')}, descricao.ilike.%${searchTerms.join('%')}`)
+    .order('nome', { ascending: true })
+    .limit(limit);
+
+  if (error) {
+    console.error('Erro ao buscar produtos:', error);
+    return [];
+  }
+
+  return data || [];
+}
+
 // Função para gerar embeddings simples (busca por keywords como fallback)
 async function searchKnowledgeBase(query: string, limit: number = 3) {
   // Por enquanto vamos usar busca por texto até implementarmos embeddings
   const searchTerms = query.toLowerCase().split(' ').filter(term => term.length > 2);
-  
+
   // Busca por tags e conteúdo
   const { data, error } = await supabase
     .from('knowledge_base')
@@ -129,10 +172,13 @@ Deno.serve(async (req: Request) => {
 
     // Detectar intenções na mensagem
     const intents = detectIntent(message);
-    
-    // Buscar informações relevantes na base de conhecimento
+
+    // SEMPRE buscar TODOS os produtos reais cadastrados
+    const produtosReais = await getAllProdutos();
+
+    // Buscar informações relevantes na base de conhecimento (EXCETO produtos)
     const knowledgeResults = await searchKnowledgeBase(message);
-    
+
     // Construir contexto da conversa
     let systemPrompt = `Você é o Assis, proprietário da AssisMax Atacarejo em Valparaíso de Goiás.
 
@@ -142,22 +188,32 @@ PERSONALIDADE:
 - Sempre mencione economia e preços justos
 - Seja genuíno e prestativo
 
-INFORMAÇÕES RELEVANTES PARA ESTA CONVERSA:
+PRODUTOS REAIS CADASTRADOS NO SISTEMA (TOTAL: ${produtosReais.length}):
+${produtosReais.length > 0 ? produtosReais.map(produto => `
+📦 ${produto.nome} (${produto.categoria})
+   ${produto.descricao || ''}
+   💰 Preço Varejo: R$ ${produto.preco_varejo || 'Consulte'}
+   🏪 Preço Atacado: R$ ${produto.preco_atacado || 'Consulte'}
+   📦 Estoque: ${produto.estoque || 0} unidades
+`).join('\n') : 'NENHUM PRODUTO CADASTRADO NO MOMENTO'}
+
+INFORMAÇÕES COMPLEMENTARES (NÃO SOBRE PRODUTOS):
 ${knowledgeResults.map(kb => `
 ${kb.titulo}:
 ${kb.conteudo}
 `).join('\n')}
 
-INSTRUÇÕES ESPECÍFICAS:
-1. Use as informações acima para responder com precisão
-2. Sempre mencione preços quando relevante
-3. Explique o diferencial de atacado para pessoa física
-4. Se perguntarem sobre produtos, use os preços exatos fornecidos
-5. Mantenha tom conversacional e amigável
-6. Se não souber algo, ofereça para a equipe entrar em contato
+REGRAS CRÍTICAS:
+1. NUNCA invente produtos que não estão na lista acima
+2. SEMPRE use apenas os produtos reais cadastrados com preços exatos
+3. Se não temos produtos cadastrados, seja honesto: "No momento não temos produtos cadastrados no sistema"
+4. Se perguntarem sobre produtos específicos que não temos, diga que não temos no momento
+5. Quando perguntarem "quantos produtos", responda: ${produtosReais.length} produtos
+6. JAMAIS mencione produtos fictícios ou da base de conhecimento antiga
 
 CONTEXTO ATUAL:
 - Usuário: ${user_data?.nome || 'Visitante'}
+- Produtos reais cadastrados: ${produtosReais.length}
 - Intenções detectadas: ${intents.join(', ') || 'conversa geral'}`;
 
     // Verificar se deve coletar dados
@@ -202,9 +258,15 @@ CONTEXTO ATUAL:
       success: true,
       response: aiResponse,
       intents: intents,
+      produtos_reais_cadastrados: produtosReais.length,
+      produtos_nomes: produtosReais.map(p => p.nome),
       knowledge_used: knowledgeResults.length,
       next_actions: nextActions,
-      should_collect_data: needsDataCollection
+      should_collect_data: needsDataCollection,
+      debug: {
+        total_produtos_banco: produtosReais.length,
+        produtos_encontrados: produtosReais.map(p => `${p.nome} - R$ ${p.preco_atacado}`)
+      }
     }), {
       headers: {
         'Content-Type': 'application/json',

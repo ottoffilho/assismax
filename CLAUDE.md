@@ -63,11 +63,12 @@ npm install
 - **Triggers** para auditoria automática e métricas
 
 ### Integrations
-- **WhatsApp Business API** - Mensageria automatizada
-- **OpenAI/Claude API** - Qualificação por IA  
-- **Google Sheets API** - Sincronização via N8N
-- **Email** - Notificações
-- **N8N** - Workflow automation e integrações
+- **WhatsApp Business API** - Mensageria automatizada via `WhatsAppService` centralizado
+- **OpenAI/Claude API** - Qualificação por IA com contexto específico do atacarejo
+- **DeepSeek API** - **NOVO**: AI provider para admin assistant (análise de dados)
+- **Google Sheets API** - Sincronização em tempo real via `GoogleSheetsService`
+- **Email** - Notificações automatizadas
+- **N8N** - Workflow automation e integrações com webhooks
 - **Google Analytics** - Tracking opcional
 
 ### Edge Functions
@@ -79,7 +80,32 @@ npm install
 - `lead-automation` - Automação e integração com N8N
 - `ai-conversation` - Chatbot inteligente para qualificação
 - `initial-setup` - Setup sistema (empresa + admin inicial)
-- `create-funcionario` - Criação de novos usuários pelo admin
+- `create-funcionario` - Admin-only function para criação de funcionários
+- `admin-ai-assistant` - **NOVO**: Chatbot inteligente para admins com:
+  - Análise de dados em tempo real via DeepSeek API
+  - Queries SQL dinâmicas baseadas em linguagem natural
+  - Rate limiting (30 req/min) e auditoria completa
+  - Insights de negócio e recomendações automatizadas
+- `cleanup-auth` - **NOVO**: Utilitário para limpeza completa do sistema auth
+
+## Design System & UI
+
+### shadcn/ui Configuration
+- **Base Path**: `@/components/ui` com custom configuration
+- **Base Color**: Slate theme para consistência
+- **CSS Variables**: Sistema de design tokens em `src/index.css`
+- **Custom Components**: Radix UI + Tailwind customizations
+
+### Brand & Theme System
+- **AssisMax Identity**: Primary black (#000000) + accent yellow (#FFD700)
+- **Custom CSS Variables**: Comprehensive color system para light/dark modes
+- **Animation System**: Custom keyframes (`fade-in-up`, `pulse-glow`, `float`)
+- **Logo Assets**: Multiple variations em `src/assets/logo/` (horizontal/vertical, light/dark)
+
+### Responsive Design
+- **Mobile-first**: Breakpoints Tailwind padrão
+- **Design tokens**: Spacing, typography, shadows consistentes
+- **Component variants**: Uso extensivo de cva (class-variance-authority)
 
 ## Key Business Logic Hooks
 
@@ -106,6 +132,14 @@ npm install
 - **Session Management**: Token refresh e state persistence
 - **Timeout Handling**: 5s timeout para queries DB
 
+### `useAdminChatbot` - **NOVO**
+- **AI-powered Admin Assistant**: Chatbot inteligente para análise de dados
+- **Natural Language to SQL**: Converte perguntas em queries SQL dinâmicas
+- **Typewriter Effect**: Animação de digitação para respostas
+- **Real-time Analytics**: Consultas em tempo real com metadata completa
+- **Rate Limiting**: Controle de uso (30 req/min) integrado
+- **Context Awareness**: Histórico de conversação e contexto de negócio
+
 ### Dashboard Architecture
 - **AdminDashboard** - Métricas completas, gestão de leads, analytics
 - **FuncionariosDashboard** - View simplificada para atendimento
@@ -113,6 +147,10 @@ npm install
   - `KPICard` - Métricas em tempo real
   - `LeadsFilters` - Filtros avançados com debounce
   - `LeadsTable` - Tabela com actions inline
+  - **Charts System**: `BarChart`, `DonutChart`, `LineChart` - Visualizações interativas
+  - **Admin Tools**: `FuncionariosManager`, `ProdutosManager` - Gestão administrativa
+  - **AI Assistant**: `AdminChatbotModal` - **NOVO**: Modal do assistente IA com interface rica
+  - **Common Utils**: `EmptyState`, `ActivityFeed` - Estados e feedback visual
 
 
 ## Lead Capture Flow
@@ -130,19 +168,27 @@ npm install
 ## LGPD & Security Guidelines
 
 ### Obrigatório
-- **Nunca commitar secrets** - Use variáveis de ambiente
-- **Lógica sensível no backend** - APIs apenas em Edge Functions
-- **Validação dupla** - Frontend (Zod) + Backend
-- **RLS em todas as tabelas** - Sem exceções
-- **Audit trail completo** - Todas operações logadas
-- **Consentimentos explícitos** - Versioned e rastreados
+- **Nunca commitar secrets** - Use variáveis de ambiente (WhatsApp API, OpenAI, DeepSeek, Supabase keys)
+- **Lógica sensível no backend** - Todas as integrações com APIs externas APENAS em Edge Functions
+- **Validação dupla** - Frontend (Zod) + Backend obrigatório para TODOS os inputs de leads
+- **RLS em todas as tabelas** - Sem exceções, implementação rigorosa
+- **Audit trail completo** - Todas operações logadas para compliance LGPD
+- **Consentimentos explícitos** - Versioned e rastreados com direitos do titular
+- **Rate limiting** - Implementar para todas as APIs externas (WhatsApp, OpenAI, Google)
 
 ### Padrões de Segurança
 - `secureLogger` para evitar log de dados sensíveis
 - Validação de formato brasileiro (telefone, CPF)
 - IP e user-agent tracking para compliance
+- **Sistema de tratamento de erros centralizado** para falhas de integração
 
 ## Code Standards
+
+### Development Rules Integration
+- **Cursor/Augment Rules**: Comprehensive development guidelines in `.augment/rules/rules.md`
+- **Business Context**: Specific patterns for atacarejo lead capture domain
+- **Security Focus**: LGPD compliance and API integration patterns enforced
+- **Code Quality**: DRY principles with reusable ASSISMAX components
 
 ### TypeScript
 - **Permissive mode** - Configurado para desenvolvimento ágil com:
@@ -151,52 +197,119 @@ npm install
   - `noUnusedLocals: false`
   - `strictNullChecks: false`
 - **Tipos centralizados** - `src/integrations/supabase/types.ts` (auto-generated)
+- **Business Types** - `src/types/admin-chatbot.ts` - **NOVO**: Tipos complexos para:
+  - `AdminMessage`, `AdminChatbotResponse` - Sistema de chatbot
+  - `LeadsAnalytics`, `FuncionariosPerformance` - Analytics de negócio
+  - `QueryAnalytics`, `AuditLog` - Auditoria e compliance
+  - `BusinessInsight`, `MetricsTrend` - Insights automatizados
 - **Validação em runtime** - Zod para forms, Supabase para DB
 - **Path mapping** - `@/*` → `./src/*` configurado
+- **IMPORTANTE**: Proibir uso de `any`, sempre tipar props, usar `interface` para objetos
 
 ### React Patterns
 - **Composition over inheritance**
-- **Custom hooks** para lógica reutilizável
-- **Arquivos < 400-500 linhas**
+- **Custom hooks** para lógica reutilizável com hooks específicos: `useLeadCapture`, `useWhatsAppIntegration`
+- **Arquivos < 400-500 linhas** - CRÍTICO: Refatorar se ultrapassar
 - **Mobile-first** responsivo
+- **DRY principle** - Reutilizar componentes: `LeadForm`, `ChatWidget`, `LandingPageSection`
+- **Separação de responsabilidades** - Lógica em `/hooks` e `/services`, UI pura em componentes
 
 ### Commits
 - **Atomic commits** - Pequenos e focados
 - **Conventional commits** - feat:, fix:, chore:
 - **Português BR** em mensagens
+- **Contexto específico** - Ex: "feat: adicionar validação telefone brasileiro"
+
+## Admin AI Assistant System - **NOVO SISTEMA COMPLETO**
+
+### Arquitetura do Chatbot Administrativo
+- **Edge Function**: `admin-ai-assistant` - Processa linguagem natural para SQL
+- **AI Provider**: DeepSeek API - Modelo otimizado para análise de dados
+- **Interface**: `AdminChatbotModal` - Modal Rico com typewriter effect
+- **Hook**: `useAdminChatbot` - Gerenciamento de estado e conversação
+- **Types**: `src/types/admin-chatbot.ts` - 244 linhas de tipagem completa
+
+### Funcionalidades Avançadas
+- **Natural Language to SQL**: Converte perguntas em português para queries SQL
+- **Real-time Analytics**: Consultas diretas ao banco com metadata
+- **Business Intelligence**: Insights automatizados e recomendações
+- **Rate Limiting**: 30 requests/minuto com controle por usuário
+- **Audit Trail**: Log completo de queries executadas
+- **Security**: Validação de permissões admin-only e sanitização de queries
+
+### Casos de Uso Implementados
+- Analytics de leads: "Quantos leads novos hoje?", "Taxa de conversão por fonte"
+- Performance de funcionários: "Qual funcionário converte mais?", "Produtividade da equipe"
+- Análise de produtos: "Produtos mais consultados", "Otimização de preços"
+- Métricas de negócio: "Funil de conversão", "Tendências de crescimento"
+- Troubleshooting: "Leads abandonados", "Gargalos no processo"
+
+### Interface Features
+- **Quick Questions**: Sugestões categorizadas por ícones e cores
+- **Typewriter Effect**: Animação de digitação realística
+- **Raw Data Display**: Expandir dados brutos com formatação JSON
+- **Online Status**: Indicadores visuais de disponibilidade
+- **Context Awareness**: Histórico de conversação e contexto de negócio
 
 ## Testing Strategy
 
-- **Não configurado ainda** - Framework de testes não implementado
-- **Planejado**: React Testing Library + Vitest
-- **MSW** para mock de APIs (quando implementado)
+- **Framework não configurado** - No npm scripts for testing available yet
+- **Quando implementado**: React Testing Library + Vitest planejado
+- **MSW** para mock de APIs (quando implementado)  
 - **Foco em integração** - Fluxo completo Landing → Captura → IA → Conversão
+- **AI Testing**: Testes específicos para chatbot admin e validação de queries SQL
 
 ## Authentication & Setup
 
-- **Dual Authentication**: Supabase Auth + tabela `funcionarios` 
-- **AuthContext Components**:
-  - `AuthContext` - State management com role-based redirects
-  - `ProtectedRoute` - Proteção de rotas com verificação de roles
-  - `LoginModal` - Modal reutilizável para autenticação
-- **Setup Flow**: 
-  - `/setup` - Configuração inicial automática via Edge Function
-  - Criação empresa ASSISMAX + admin inicial
-  - Idempotente e transacional
-- **Níveis de acesso**:
-  - `admin` - Proprietário (dashboard completo) 
-  - `funcionario` - Funcionário (dashboard simplificado)
-- **Error Handling**: Timeouts, toasts em PT-BR, fallbacks
+### Dual Authentication Architecture
+- **Supabase Auth + Custom Table**: Validação dupla com tabela `funcionarios`
+- **State Management**: `isAuthenticated` (Supabase) vs `isValidUser` (custom logic)
+- **Timeout Strategy**: 5s timeout para queries com fallback graceful
+- **Session Persistence**: Token refresh automático e state sync
+
+### Authentication Components
+- **AuthContext**: Gerenciamento centralizado de estado e role-based redirects
+- **ProtectedRoute**: HOC para proteção de rotas com verificação de roles
+- **LoginModal**: Modal reutilizável com validação e error handling
+- **Setup Page**: `/src/pages/Setup.tsx` - First-time setup automático
+
+### Setup & Onboarding Flow
+- **Initial Setup**: Edge Function `initial-setup` cria empresa + admin
+- **Idempotent**: Verificações para evitar duplicação de configuração
+- **Transactional**: Rollback automático em caso de falha
+- **Employee Creation**: Admin pode criar funcionários via `create-funcionario`
+
+### Access Levels
+- **admin**: Proprietário com acesso completo (dashboards, gestão, métricas)
+- **funcionario**: Funcionário com dashboard simplificado e gestão de leads
 
 ## Configuration
 
+### Build & Development
 - **Vite**: Host `::` porta 8080, React SWC plugin, Lovable tagger em dev
-- **Path alias**: `@/` → `./src/`
-- **ESLint**: 
+- **Path Aliases**: `@/` → `./src/` configurado em Vite + TypeScript
+- **PostCSS**: Tailwind CSS + Autoprefixer pipeline
+- **TypeScript Project References**: 
+  - `tsconfig.json` - Root configuration com project references
+  - `tsconfig.app.json` - App-specific config (src/*)
+  - `tsconfig.node.json` - Node-specific config (vite.config.ts)
+
+### Linting & Code Quality
+- **ESLint Configuration**:
   - React + TypeScript + hooks rules
-  - `@typescript-eslint/no-unused-vars: off` - variáveis não utilizadas permitidas
-  - `react-refresh/only-export-components` warnings
-- **TypeScript Project References**: `tsconfig.app.json` e `tsconfig.node.json`
+  - `@typescript-eslint/no-unused-vars: off` - Permite variáveis não utilizadas
+  - `react-refresh/only-export-components` warnings apenas
+- **Permissive TypeScript**: Configurado para desenvolvimento ágil
+
+### Environment Variables Architecture
+- **103+ Variables**: Categorizadas em 12 grupos funcionais:
+  - **Supabase**: Project URL, Anon Key, Service Role
+  - **APIs**: WhatsApp, OpenAI, **DeepSeek** (admin AI assistant), Google Sheets
+  - **Regional**: Valparaíso de Goiás, CEP, coordenadas
+  - **Business**: CNPJ, razão social, produtos principais
+  - **LGPD**: Compliance settings, consent management
+  - **Rate Limiting**: API throttling e usage limits (30 req/min admin chatbot)
+  - **N8N**: Webhook endpoints e automation triggers
 
 ## Business Context
 
@@ -222,11 +335,13 @@ npm install
 - **Dashboards admin/funcionários COMPLETOS**
 - **Sistema de gestão de leads avançado**
 - **Sistema de autenticação completo** (dual auth + setup)
+- **AI Admin Assistant COMPLETO** - Chatbot inteligente para análise de dados
 - Fundação LGPD
 - Sistema de design responsivo
 - **Hooks com validação em tempo real**
-- **Edge Functions production-ready**
+- **Edge Functions production-ready** (7 funções incluindo admin AI)
 - **N8N workflow automation**
+- **TypeScript types sistema completo** (244 linhas de tipos de negócio)
 
 🔄 **Em Desenvolvimento:**
 - Integração WhatsApp Business (infraestrutura pronta)

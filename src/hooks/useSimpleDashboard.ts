@@ -18,14 +18,10 @@ export function useSimpleDashboard() {
     staleTime: 0,
     queryFn: async (): Promise<SimpleLead[]> => {
       console.log('Buscando leads...');
-      
-      // Usar diretamente o ID da empresa que sabemos que existe
-      const empresaId = '231f795a-b14c-438b-a896-2f2e479cfa02';
-      
+
       const { data, error } = await supabase
         .from('leads')
         .select('id, nome, telefone, email, origem, status, created_at')
-        .eq('empresa_id', empresaId)
         .order('created_at', { ascending: false });
 
       console.log('Query resultado - data:', data);
@@ -38,7 +34,7 @@ export function useSimpleDashboard() {
 
       console.log('✅ Leads encontrados:', data?.length || 0);
       console.log('📊 Dados dos leads:', data);
-      
+
       return data || [];
     },
   });

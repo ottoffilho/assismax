@@ -1,0 +1,108 @@
+/* Animações personalizadas para o ChatbotModal */
+
+/* Animação de fade-in-up para mensagens */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.3s ease-out;
+}
+
+/* Animação de fade-in para indicador de digitação */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
+}
+
+/* Animações de bounce com delays personalizados para os pontos de digitação */
+.typing-dot-1 {
+  animation: bounce 1.4s infinite ease-in-out;
+  animation-delay: 0ms;
+}
+
+.typing-dot-2 {
+  animation: bounce 1.4s infinite ease-in-out;
+  animation-delay: 150ms;
+}
+
+.typing-dot-3 {
+  animation: bounce 1.4s infinite ease-in-out;
+  animation-delay: 300ms;
+}
+
+/* Efeito de hover suave para botões */
+.chatbot-button {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.chatbot-button:hover {
+  transform: translateY(-1px);
+}
+
+/* Estilo personalizado para o avatar do bot - removido para usar apenas ícones */
+
+/* Estilo para mensagens com gradiente sutil */
+.user-message {
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-hover)) 100%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.bot-message {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Efeito de pulse para indicador online */
+.online-indicator {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Scrollbar personalizada para área de mensagens */
+.chatbot-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.chatbot-scroll::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+  border-radius: 2px;
+}
+
+.chatbot-scroll::-webkit-scrollbar-thumb {
+  background: hsl(var(--accent));
+  border-radius: 2px;
+}
+
+.chatbot-scroll::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--accent-hover));
+}

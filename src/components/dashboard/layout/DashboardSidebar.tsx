@@ -1,16 +1,17 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { 
-  LayoutDashboard, 
-  Users, 
+import {
+  LayoutDashboard,
+  Users,
   UserPlus,
   FileText,
   Settings,
   LogOut,
   ChevronDown,
   Package,
-  TrendingUp
+  TrendingUp,
+  Bot
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -39,9 +40,10 @@ interface NavItem {
 
 interface DashboardSidebarProps {
   isCollapsed?: boolean;
+  onChatbotToggle?: () => void;
 }
 
-export function DashboardSidebar({ isCollapsed = false }: DashboardSidebarProps) {
+export function DashboardSidebar({ isCollapsed = false, onChatbotToggle }: DashboardSidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, funcionario, signOut } = useAuth();
@@ -284,6 +286,41 @@ export function DashboardSidebar({ isCollapsed = false }: DashboardSidebarProps)
         <nav className={cn("flex-1 space-y-1 overflow-y-auto", isCollapsed ? "p-2" : "p-4")}>
           {navItems.map(item => renderNavItem(item))}
         </nav>
+
+        {/* Chatbot (Admin Only) */}
+        {isAdmin && onChatbotToggle && (
+          <div className={cn("border-t border-gray-700", isCollapsed ? "p-2" : "p-4")}>
+            {isCollapsed ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="w-full justify-center hover:bg-blue-600 hover:text-white bg-blue-700/20 text-blue-300"
+                    onClick={onChatbotToggle}
+                  >
+                    <Bot className="w-5 h-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>AssisBot - Assistente IA</p>
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <Button
+                variant="ghost"
+                className="w-full justify-start gap-3 hover:bg-blue-600 hover:text-white bg-blue-700/20 text-blue-300"
+                onClick={onChatbotToggle}
+              >
+                <Bot className="w-5 h-5" />
+                <span className="font-medium">AssisBot</span>
+                <span className="ml-auto text-xs bg-blue-600 text-white px-2 py-1 rounded">
+                  AI
+                </span>
+              </Button>
+            )}
+          </div>
+        )}
 
         {/* Footer */}
         <div className={cn(isCollapsed ? "p-2" : "p-4")}>

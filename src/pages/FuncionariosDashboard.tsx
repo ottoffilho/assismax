@@ -29,6 +29,7 @@ import { LeadsTable } from '@/components/dashboard/LeadsTable';
 import { useLeads, useLeadActions } from '@/hooks/useDashboard';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { usePerformanceMetrics } from '@/hooks/usePerformanceMetrics';
 import { DonutChart } from '@/components/dashboard/charts/DonutChart';
 import { LineChart } from '@/components/dashboard/charts/LineChart';
 
@@ -51,6 +52,7 @@ export default function FuncionariosDashboard() {
   const { leads, isLoadingLeads, refetchLeads } = useLeads(filters);
   const { updateLeadStatus, assignLeadToFuncionario } = useLeadActions();
   const { toast } = useToast();
+  const { metrics: performanceMetrics, isLoading: isLoadingPerformance } = usePerformanceMetrics();
 
   // Calcular métricas do funcionário
   const meusLeads = leads || [];
@@ -166,7 +168,6 @@ export default function FuncionariosDashboard() {
                 description="Total sob sua responsabilidade"
                 icon={<Users />}
                 color="info"
-                trend={{ value: 12, type: 'up' }}
               />
               <MetricCard
                 title="Em Atendimento"
@@ -181,7 +182,6 @@ export default function FuncionariosDashboard() {
                 description="Leads fechados"
                 icon={<CheckCircle />}
                 color="success"
-                trend={{ value: 8, type: 'up' }}
               />
               <MetricCard
                 title="Novos Hoje"
@@ -275,22 +275,20 @@ export default function FuncionariosDashboard() {
                 description="Leads convertidos / Total"
                 icon={<Target />}
                 color={leadsConvertidos / Math.max(meusLeads.length, 1) > 0.25 ? 'success' : 'warning'}
-                trend={{ value: 5, type: 'up' }}
               />
               <MetricCard
                 title="Tempo Médio"
-                value="< 2h"
+                value={isLoadingPerformance ? '...' : performanceMetrics?.tempoMedioResposta || '0min'}
                 description="Resposta inicial"
                 icon={<Clock />}
                 color="success"
               />
               <MetricCard
                 title="Satisfação"
-                value="95%"
-                description="Feedback dos clientes"
+                value={isLoadingPerformance ? '...' : performanceMetrics?.satisfacaoCliente || '0%'}
+                description="Baseada na conversão"
                 icon={<CheckCircle />}
                 color="success"
-                trend={{ value: 2, type: 'up' }}
               />
             </div>
 

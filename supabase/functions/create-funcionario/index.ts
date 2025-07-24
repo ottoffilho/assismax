@@ -53,7 +53,7 @@ serve(async (req) => {
     // 2. Verificar se o usuário atual é admin usando user_id
     const { data: adminUser, error: adminError } = await supabase
       .from('funcionarios')
-      .select('nivel_acesso, empresa_id')
+      .select('nivel_acesso')
       .eq('user_id', user.id)
       .eq('ativo', true)
       .single()
@@ -103,7 +103,6 @@ serve(async (req) => {
         email,
         telefone: telefone || null,
         nivel_acesso,
-        empresa_id: adminUser.empresa_id,
         user_id: authData.user.id,
         ativo: true
       })

@@ -8,9 +8,10 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 interface DashboardLayoutProps {
   children?: React.ReactNode;
+  onChatbotToggle?: () => void;
 }
 
-export function DashboardLayout({ children }: DashboardLayoutProps) {
+export function DashboardLayout({ children, onChatbotToggle }: DashboardLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
   const [isCollapsed, setIsCollapsed] = React.useState(() => {
     const saved = localStorage.getItem('sidebar-collapsed');
@@ -30,7 +31,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         "hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:flex-col transition-all duration-300",
         isCollapsed ? "lg:w-16" : "lg:w-72"
       )}>
-        <DashboardSidebar isCollapsed={isCollapsed} />
+        <DashboardSidebar 
+          isCollapsed={isCollapsed} 
+          onChatbotToggle={onChatbotToggle}
+        />
         
         {/* Toggle Button */}
         <Button
@@ -59,7 +63,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="w-72 p-0">
-          <DashboardSidebar isCollapsed={false} />
+          <DashboardSidebar 
+            isCollapsed={false} 
+            onChatbotToggle={onChatbotToggle}
+          />
         </SheetContent>
       </Sheet>
 

@@ -1,42 +1,44 @@
 import React from 'react';
 import { Users, Truck, Award, Clock } from "lucide-react";
-
-const stats = [
-  {
-    id: '1',
-    label: 'Clientes Satisfeitos',
-    value: '500+',
-    description: 'Famílias economizando todos os meses',
-    icon: Users,
-    color: 'primary'
-  },
-  {
-    id: '2', 
-    label: 'Produtos Disponíveis',
-    value: '200+',
-    description: 'Itens essenciais com preços de atacado',
-    icon: Award,
-    color: 'secondary'
-  },
-  {
-    id: '3',
-    label: 'Entregas por Semana',
-    value: '100+',
-    description: 'Rapidez e pontualidade garantidas',
-    icon: Truck,
-    color: 'accent'
-  },
-  {
-    id: '4',
-    label: 'Anos de Experiência',
-    value: '10+',
-    description: 'Tradição no atacarejo em Valparaíso',
-    icon: Clock,
-    color: 'primary'
-  },
-];
+import { useCompanyStats } from '@/hooks/useCompanyStats';
 
 export default function StatsSection() {
+  const { stats: companyStats, isLoading } = useCompanyStats();
+
+  const stats = [
+    {
+      id: '1',
+      label: 'Clientes Satisfeitos',
+      value: isLoading ? '...' : companyStats?.clientesSatisfeitos || '0',
+      description: 'Famílias economizando todos os meses',
+      icon: Users,
+      color: 'primary'
+    },
+    {
+      id: '2',
+      label: 'Produtos Disponíveis',
+      value: isLoading ? '...' : companyStats?.produtosDisponiveis || '0',
+      description: 'Itens essenciais com preços de atacado',
+      icon: Award,
+      color: 'secondary'
+    },
+    {
+      id: '3',
+      label: 'Entregas por Semana',
+      value: isLoading ? '...' : companyStats?.entregasPorSemana || '0',
+      description: 'Rapidez e pontualidade garantidas',
+      icon: Truck,
+      color: 'accent'
+    },
+    {
+      id: '4',
+      label: 'Anos de Experiência',
+      value: isLoading ? '...' : companyStats?.anosExperiencia || '< 1',
+      description: 'Tradição no atacarejo em Valparaíso',
+      icon: Clock,
+      color: 'primary'
+    },
+  ];
   return (
     <section className="section-padding bg-gradient-hero text-white">
       <div className="container-responsive">
@@ -86,8 +88,14 @@ export default function StatsSection() {
             Junte-se à nossa família de clientes!
           </h3>
           <p className="text-white/80 text-lg">
-            Mais de <span className="font-semibold text-accent">R$ 500.000</span> em produtos movimentados mensalmente, 
-            com economia real para cada cliente.
+            {isLoading ? (
+              'Carregando estatísticas...'
+            ) : (
+              <>
+                Mais de <span className="font-semibold text-accent">{companyStats?.faturamentoMensal || 'R$ 0'}</span> em produtos movimentados mensalmente,
+                com economia real para cada cliente.
+              </>
+            )}
           </p>
         </div>
       </div>

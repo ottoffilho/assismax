@@ -12,6 +12,11 @@ export interface DashboardMetrics {
   leadsPorOrigem: { origem: string; total: number }[];
   leadsPorStatus: { status: string; total: number }[];
   metricasPorDia: { data: string; leads: number }[];
+  tendencias: {
+    leadsHoje: { value: number; type: 'up' | 'down' | 'neutral' };
+    leadsSemana: { value: number; type: 'up' | 'down' | 'neutral' };
+    taxaConversao: { value: number; type: 'up' | 'down' | 'neutral' };
+  };
 }
 
 export interface Lead {
@@ -49,41 +54,33 @@ export function useDashboard() {
       const semanaAtras = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
       const mesAtras = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-      // Usar ID direto da empresa ASSISMAX
-      const empresaId = '231f795a-b14c-438b-a896-2f2e479cfa02';
-
       // Leads hoje
       const { count: leadsHoje } = await supabase
         .from('leads')
         .select('*', { count: 'exact', head: true })
-        .eq('empresa_id', empresaId)
         .gte('created_at', hoje);
 
       // Leads última semana
       const { count: leadsSemana } = await supabase
         .from('leads')
         .select('*', { count: 'exact', head: true })
-        .eq('empresa_id', empresaId)
         .gte('created_at', semanaAtras);
 
       // Leads último mês
       const { count: leadsMes } = await supabase
         .from('leads')
         .select('*', { count: 'exact', head: true })
-        .eq('empresa_id', empresaId)
         .gte('created_at', mesAtras);
 
       // Total de leads
       const { count: leadsTotal } = await supabase
         .from('leads')
-        .select('*', { count: 'exact', head: true })
-        .eq('empresa_id', empresaId);
+        .select('*', { count: 'exact', head: true });
 
       // Leads por origem
       const { data: leadsPorOrigem } = await supabase
         .from('leads')
-        .select('origem')
-        .eq('empresa_id', empresaId);
+        .select('origem');
 
       const origemCounts = leadsPorOrigem?.reduce((acc: Record<string, number>, lead) => {
         acc[lead.origem] = (acc[lead.origem] || 0) + 1;
@@ -93,8 +90,7 @@ export function useDashboard() {
       // Leads por status
       const { data: leadsPorStatus } = await supabase
         .from('leads')
-        .select('status')
-        .eq('empresa_id', empresaId);
+        .select('status');
 
       const statusCounts = leadsPorStatus?.reduce((acc: Record<string, number>, lead) => {
         acc[lead.status] = (acc[lead.status] || 0) + 1;
@@ -105,7 +101,6 @@ export function useDashboard() {
       const { data: metricasDiarias } = await supabase
         .from('leads')
         .select('created_at')
-        .eq('empresa_id', empresaId)
         .gte('created_at', mesAtras)
         .order('created_at', { ascending: true });
 
@@ -119,6 +114,41 @@ export function useDashboard() {
       const leadsConvertidos = statusCounts['convertido'] || 0;
       const taxaConversao = leadsTotal ? (leadsConvertidos / leadsTotal) * 100 : 0;
 
+      // Calcular tendências comparando com períodos anteriores
+      const ontem = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const semanaPassada = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const semanaPassadaFim = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+      // Leads ontem
+      const { count: leadsOntem } = await supabase
+        .from('leads')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', ontem)
+        .lt('created_at', hoje);
+
+      // Leads semana passada
+      const { count: leadsSemanaPassada } = await supabase
+        .from('leads')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', semanaPassada)
+        .lt('created_at', semanaPassadaFim);
+
+      // Calcular tendências
+      const calcularTendencia = (atual: number, anterior: number) => {
+        if (anterior === 0) return { value: 0, type: 'neutral' as const };
+        const percentual = Math.round(((atual - anterior) / anterior) * 100);
+        return {
+          value: Math.abs(percentual),
+          type: percentual > 0 ? 'up' as const : percentual < 0 ? 'down' as const : 'neutral' as const
+        };
+      };
+
+      const tendencias = {
+        leadsHoje: calcularTendencia(leadsHoje || 0, leadsOntem || 0),
+        leadsSemana: calcularTendencia(leadsSemana || 0, leadsSemanaPassada || 0),
+        taxaConversao: calcularTendencia(taxaConversao, 0) // Para taxa de conversão, comparar com meta ou histórico
+      };
+
       return {
         leadsHoje: leadsHoje || 0,
         leadsSemana: leadsSemana || 0,
@@ -127,7 +157,8 @@ export function useDashboard() {
         taxaConversao: Math.round(taxaConversao * 100) / 100,
         leadsPorOrigem: Object.entries(origemCounts).map(([origem, total]) => ({ origem, total })),
         leadsPorStatus: Object.entries(statusCounts).map(([status, total]) => ({ status, total })),
-        metricasPorDia: Object.entries(metricasPorDia).map(([data, leads]) => ({ data, leads }))
+        metricasPorDia: Object.entries(metricasPorDia).map(([data, leads]) => ({ data, leads })),
+        tendencias
       };
     },
     refetchInterval: 5 * 60 * 1000, // Atualizar a cada 5 minutos
@@ -146,9 +177,6 @@ export function useLeads(filters: LeadFilters = {}) {
   const { data: leads, isLoading: loadingLeads, error: leadsError, refetch } = useQuery({
     queryKey: ['leads', currentFilters],
     queryFn: async (): Promise<Lead[]> => {
-      // Usar ID direto da empresa ASSISMAX
-      const empresaId = '231f795a-b14c-438b-a896-2f2e479cfa02';
-
       let query = supabase
         .from('leads')
         .select(`
@@ -163,8 +191,7 @@ export function useLeads(filters: LeadFilters = {}) {
           created_at,
           updated_at,
           funcionario:funcionarios(nome, email)
-        `)
-        .eq('empresa_id', empresaId);
+        `);
 
       // Aplicar filtros
       if (currentFilters.status) {

@@ -35,51 +35,7 @@ const activityIcons = {
 };
 
 export function ActivityFeed({ activities = [], className, isLoading }: ActivityFeedProps) {
-  // Mock data para demonstração
-  const mockActivities: Activity[] = activities.length > 0 ? activities : [
-    {
-      id: '1',
-      type: 'lead_novo',
-      title: 'Novo lead capturado',
-      description: 'João Silva - Via Landing Page',
-      timestamp: 'Há 5 minutos',
-      user: 'Sistema'
-    },
-    {
-      id: '2',
-      type: 'lead_atribuido',
-      title: 'Lead atribuído',
-      description: 'Maria Santos atribuída para Pedro',
-      timestamp: 'Há 15 minutos',
-      user: 'Admin'
-    },
-    {
-      id: '3',
-      type: 'lead_convertido',
-      title: 'Lead convertido!',
-      description: 'Carlos Oliveira fechou negócio',
-      timestamp: 'Há 1 hora',
-      user: 'Ana Costa'
-    },
-    {
-      id: '4',
-      type: 'lead_qualificado',
-      title: 'Lead qualificado',
-      description: 'Ana Maria demonstrou interesse',
-      timestamp: 'Há 2 horas',
-      user: 'João Pedro'
-    },
-    {
-      id: '5',
-      type: 'lead_perdido',
-      title: 'Lead perdido',
-      description: 'Roberto Silva - Sem interesse',
-      timestamp: 'Há 3 horas',
-      user: 'Maria Clara'
-    }
-  ];
-
-  const displayActivities = activities.length > 0 ? activities : mockActivities;
+  const displayActivities = activities;
 
   if (isLoading) {
     return (

@@ -376,7 +376,6 @@ export type Database = {
           categoria: string
           created_at: string | null
           descricao: string | null
-          empresa_id: string | null
           estoque: number | null
           id: string
           imagem_url: string | null
@@ -390,7 +389,6 @@ export type Database = {
           categoria: string
           created_at?: string | null
           descricao?: string | null
-          empresa_id?: string | null
           estoque?: number | null
           id?: string
           imagem_url?: string | null
@@ -404,7 +402,6 @@ export type Database = {
           categoria?: string
           created_at?: string | null
           descricao?: string | null
-          empresa_id?: string | null
           estoque?: number | null
           id?: string
           imagem_url?: string | null
@@ -413,15 +410,7 @@ export type Database = {
           preco_varejo?: number | null
           updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "produtos_empresa_id_fkey"
-            columns: ["empresa_id"]
-            isOneToOne: false
-            referencedRelation: "empresas"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Views: {

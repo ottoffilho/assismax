@@ -32,7 +32,11 @@
       "Bash(timeout 3s npm run dev)",
       "Bash(start:*)",
       "Bash(xdg-open:*)",
-      "Bash(supabase functions:*)"
+      "Bash(supabase functions:*)",
+      "Bash(docker:*)",
+      "mcp__sequential-thinking__sequentialthinking",
+      "mcp__supabase__get_anon_key",
+      "Bash(cat:*)"
     ],
     "deny": []
   }
