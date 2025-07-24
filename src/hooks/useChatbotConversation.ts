@@ -128,7 +128,7 @@ export function useChatbotConversation() {
         status: data.status
       };
       
-      const webhookUrl = import.meta.env.VITE_N8N_WEBHOOK_URL || 'https://assismax.app.n8n.cloud/webhook/webhook/assismax';
+      const webhookUrl = import.meta.env.VITE_N8N_WEBHOOK_URL || 'https://assismax.app.n8n.cloud/webhook/webhook-test/assismax';
       
       const response = await fetch(webhookUrl, {
         method: 'POST',
