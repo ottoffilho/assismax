@@ -1,17 +1,16 @@
-Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
-useSimpleChatbot.ts:593 🔄 RESET COMPLETO DO CHATBOT
-useSimpleChatbot.ts:606 ✅ Contadores resetados: salesQuestions=0, extendedQuestions=0
-AuthContext.tsx:244 🔄 Auth state change: INITIAL_SESSION undefined
-useSimpleChatbot.ts:297 📦 Buscando produtos do banco...
-useSimpleChatbot.ts:309 ✅ Produtos encontrados: 75
-useSimpleChatbot.ts:545 🛒 Modo vendas ativo - Pergunta: Quantos produtos tem disponivel?
-useSimpleChatbot.ts:546 🗿 Contador atual sales_mode: 0
-useSimpleChatbot.ts:320 🤖 Chamando DeepSeek API...
-useSimpleChatbot.ts:323 📦 Buscando produtos atualizados do banco...
-useSimpleChatbot.ts:297 📦 Buscando produtos do banco...
-useSimpleChatbot.ts:309 ✅ Produtos encontrados: 75
-useSimpleChatbot.ts:328 🔍 AUDITORIA: Produtos encontrados no banco: 75
-useSimpleChatbot.ts:342 💰 Produtos formatados para IA: - Café Gourmet - 250g: R$ 21,50 (no varejo R$ 24,90 - economia de 14%)
+🔄 RESET COMPLETO DO CHATBOT
+index-Bhl0zLIV.js:490 ✅ Contadores resetados: salesQuestions=0, extendedQuestions=0
+index-Bhl0zLIV.js:420 🔄 Auth state change: INITIAL_SESSION undefined
+index-Bhl0zLIV.js:465 📦 Buscando produtos do banco...
+index-Bhl0zLIV.js:465 ✅ Produtos encontrados: 75
+index-Bhl0zLIV.js:490 🛒 Modo vendas ativo - Pergunta: qual variedade de alimentos voce tem?
+index-Bhl0zLIV.js:490 🗿 Contador atual sales_mode: 0
+index-Bhl0zLIV.js:465 🤖 Chamando DeepSeek API...
+index-Bhl0zLIV.js:465 📦 Buscando produtos atualizados do banco...
+index-Bhl0zLIV.js:465 📦 Buscando produtos do banco...
+index-Bhl0zLIV.js:465 ✅ Produtos encontrados: 75
+index-Bhl0zLIV.js:465 🔍 AUDITORIA: Produtos encontrados no banco: 75
+index-Bhl0zLIV.js:466 💰 Produtos formatados para IA: - Café Gourmet - 250g: R$ 21,50 (no varejo R$ 24,90 - economia de 14%)
 - Leite Integral - 1L: R$ 4,20 (no varejo R$ 4,80 - economia de 12%)
 - Leite Desnatado - 1L: R$ 4,50 (no varejo R$ 5,20 - economia de 13%)
 - Leite em Pó Integral - 400g: R$ 14,80 (no varejo R$ 16,90 - economia de 12%)
@@ -86,31 +85,63 @@ useSimpleChatbot.ts:342 💰 Produtos formatados para IA: - Café Gourmet - 250g
 - Esponja de Aço - 8 unidades: R$ 2,70 (no varejo R$ 3,20 - economia de 16%)
 - Detergente Neutro - 500ml: R$ 2,30 (no varejo R$ 2,80 - economia de 18%)
 - Pasta de Dente - 90g: R$ 3,80 (no varejo R$ 4,50 - economia de 16%)
-useSimpleChatbot.ts:370 🔑 API Key presente: true
-useSimpleChatbot.ts:399 ✅ DeepSeek resposta recebida
-useSimpleChatbot.ts:403 ✅ Resposta IA: Otto, temos mais de 50 produtos disponíveis no atacarejo, desde alimentos até bebidas e itens de lim...
-useSimpleChatbot.ts:103 🧹 Limpeza executada: caracteres removidos
-useSimpleChatbot.ts:407 🧹 Resposta após limpeza: Otto, temos mais de 50 produtos disponíveis no atacarejo, desde alimentos até bebidas e itens de lim...
-useSimpleChatbot.ts:412 ⚠️ ALERTA: Resposta pode estar incompleta: Não termina com pontuação adequada
-(anonymous) @ useSimpleChatbot.ts:412
+index-Bhl0zLIV.js:490 🔑 API Key presente: false
+index-Bhl0zLIV.js:490 ❌ DeepSeek API erro: 401
+(anonymous) @ index-Bhl0zLIV.js:490
 await in (anonymous)
-(anonymous) @ useSimpleChatbot.ts:561
-handleSendMessage @ SimpleChatbotModal.tsx:79
-handleKeyPress @ SimpleChatbotModal.tsx:91
-callCallback2 @ chunk-FJ2A54M7.js?v=17071897:3674
-invokeGuardedCallbackDev @ chunk-FJ2A54M7.js?v=17071897:3699
-invokeGuardedCallback @ chunk-FJ2A54M7.js?v=17071897:3733
-invokeGuardedCallbackAndCatchFirstError @ chunk-FJ2A54M7.js?v=17071897:3736
-executeDispatch @ chunk-FJ2A54M7.js?v=17071897:7014
-processDispatchQueueItemsInOrder @ chunk-FJ2A54M7.js?v=17071897:7034
-processDispatchQueue @ chunk-FJ2A54M7.js?v=17071897:7043
-dispatchEventsForPlugins @ chunk-FJ2A54M7.js?v=17071897:7051
-(anonymous) @ chunk-FJ2A54M7.js?v=17071897:7174
-batchedUpdates$1 @ chunk-FJ2A54M7.js?v=17071897:18913
-batchedUpdates @ chunk-FJ2A54M7.js?v=17071897:3579
-dispatchEventForPluginEventSystem @ chunk-FJ2A54M7.js?v=17071897:7173
-dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-FJ2A54M7.js?v=17071897:5478
-dispatchEvent @ chunk-FJ2A54M7.js?v=17071897:5472
-dispatchDiscreteEvent @ chunk-FJ2A54M7.js?v=17071897:5449Understand this warning
-useSimpleChatbot.ts:73 ✅ Conversa IA salva com sucesso
-useSimpleChatbot.ts:566 🗿 Incrementando contador sales_mode de 0 para 1
+(anonymous) @ index-Bhl0zLIV.js:490
+v @ index-Bhl0zLIV.js:490
+m @ index-Bhl0zLIV.js:490
+aB @ index-Bhl0zLIV.js:37
+iB @ index-Bhl0zLIV.js:37
+sB @ index-Bhl0zLIV.js:37
+K_ @ index-Bhl0zLIV.js:37
+AT @ index-Bhl0zLIV.js:37
+(anonymous) @ index-Bhl0zLIV.js:37
+B1 @ index-Bhl0zLIV.js:40
+Zk @ index-Bhl0zLIV.js:37
+by @ index-Bhl0zLIV.js:37
+p1 @ index-Bhl0zLIV.js:37
+jB @ index-Bhl0zLIV.js:37Understand this error
+index-Bhl0zLIV.js:490 ❌ Detalhes: {"error":{"message":"Authentication Fails, Your api key: ****ined is invalid","type":"authentication_error","param":null,"code":"invalid_request_error"}}
+(anonymous) @ index-Bhl0zLIV.js:490
+await in (anonymous)
+(anonymous) @ index-Bhl0zLIV.js:490
+v @ index-Bhl0zLIV.js:490
+m @ index-Bhl0zLIV.js:490
+aB @ index-Bhl0zLIV.js:37
+iB @ index-Bhl0zLIV.js:37
+sB @ index-Bhl0zLIV.js:37
+K_ @ index-Bhl0zLIV.js:37
+AT @ index-Bhl0zLIV.js:37
+(anonymous) @ index-Bhl0zLIV.js:37
+B1 @ index-Bhl0zLIV.js:40
+Zk @ index-Bhl0zLIV.js:37
+by @ index-Bhl0zLIV.js:37
+p1 @ index-Bhl0zLIV.js:37
+jB @ index-Bhl0zLIV.js:37Understand this error
+index-Bhl0zLIV.js:490 ❌ Erro ao chamar DeepSeek: Error: DeepSeek API erro: 401
+    at index-Bhl0zLIV.js:490:444
+    at async index-Bhl0zLIV.js:490:4423
+    at async v (index-Bhl0zLIV.js:490:6591)
+(anonymous) @ index-Bhl0zLIV.js:490
+await in (anonymous)
+(anonymous) @ index-Bhl0zLIV.js:490
+v @ index-Bhl0zLIV.js:490
+m @ index-Bhl0zLIV.js:490
+aB @ index-Bhl0zLIV.js:37
+iB @ index-Bhl0zLIV.js:37
+sB @ index-Bhl0zLIV.js:37
+K_ @ index-Bhl0zLIV.js:37
+AT @ index-Bhl0zLIV.js:37
+(anonymous) @ index-Bhl0zLIV.js:37
+B1 @ index-Bhl0zLIV.js:40
+Zk @ index-Bhl0zLIV.js:37
+by @ index-Bhl0zLIV.js:37
+p1 @ index-Bhl0zLIV.js:37
+jB @ index-Bhl0zLIV.js:37Understand this error
+index-Bhl0zLIV.js:465 📦 Buscando produtos do banco...
+index-Bhl0zLIV.js:465 ✅ Produtos encontrados: 75
+index-Bhl0zLIV.js:490 ⚠️ API DeepSeek falhou, usando fallback baseado em produtos reais
+index-Bhl0zLIV.js:490 📦 Produtos disponíveis para fallback: 75
+index-Bhl0zLIV.js:464 ✅ Conversa IA salva com sucesso

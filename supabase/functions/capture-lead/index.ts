@@ -74,30 +74,13 @@ Deno.serve(async (req: Request) => {
     // Inicializar cliente Supabase
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Buscar empresa padrão (por enquanto assumindo uma empresa)
-    const { data: empresa, error: empresaError } = await supabase
-      .from('empresas')
-      .select('id')
-      .eq('ativo', true)
-      .limit(1)
-      .single();
-
-    if (empresaError || !empresa) {
-      console.error('Erro ao buscar empresa:', empresaError);
-      return new Response(
-        JSON.stringify({ error: 'Empresa não encontrada' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
 
     // Verificar se lead já existe (por email ou telefone)
     const { data: existingLead } = await supabase
       .from('leads')
       .select('id, email, telefone')
-      .eq('empresa_id', empresa.id)
       .or(`email.eq.${lead.email},telefone.eq.${lead.telefone}`)
       .single();
 
@@ -115,7 +98,6 @@ Deno.serve(async (req: Request) => {
     const { data: newLead, error: leadError } = await supabase
       .from('leads')
       .insert({
-        empresa_id: empresa.id,
         nome: lead.nome.trim(),
         telefone: telefoneClean,
         email: lead.email.toLowerCase().trim(),
@@ -161,7 +143,6 @@ Deno.serve(async (req: Request) => {
     const { error: metricError } = await supabase
       .from('metricas')
       .insert({
-        empresa_id: empresa.id,
         tipo: 'lead_captado',
         valor: 1,
         metadata: {
