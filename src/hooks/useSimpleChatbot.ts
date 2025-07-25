@@ -78,6 +78,33 @@ export function useSimpleChatbot() {
   }, [leadData, stage]);
 
   // Função para extrair produtos mencionados na conversa
+  // Função para limpar caracteres especiais da resposta
+  const limparCaracteresEspeciais = useCallback((resposta: string): string => {
+    let respostaLimpa = resposta
+      // Remover formatação markdown
+      .replace(/\*\*(.*?)\*\*/g, '$1')  // **texto** → texto
+      .replace(/\*(.*?)\*/g, '$1')      // *texto* → texto
+      .replace(/_(.*?)_/g, '$1')        // _texto_ → texto
+      .replace(/`(.*?)`/g, '$1')        // `texto` → texto
+      .replace(/#{1,6}\s/g, '')         // # ## ### → (remove)
+      .replace(/\[(.*?)\]\(.*?\)/g, '$1') // [texto](link) → texto
+      
+      // Remover caracteres especiais de formatação
+      .replace(/[\[\](){}]/g, '')       // Remove colchetes e parênteses
+      .replace(/---+/g, '')             // Remove traços longos
+      .replace(/^\s*[-•]\s*/gm, '')     // Remove bullets de listas
+      .replace(/\|/g, '')               // Remove pipes de tabelas
+      
+      // Limpar espaços excessivos
+      .replace(/\s+/g, ' ')             // Múltiplos espaços → um espaço
+      .replace(/\n\s*\n/g, '\n')        // Múltiplas quebras → uma quebra
+      .trim();                          // Remove espaços início/fim
+    
+    console.log('🧹 Limpeza executada:', resposta !== respostaLimpa ? 'caracteres removidos' : 'nenhum caractere especial encontrado');
+    
+    return respostaLimpa;
+  }, []);
+
   // Função para validar se resposta está completa
   const validarRespostaCompleta = useCallback((resposta: string) => {
     const respostaTrimmed = resposta.trim();
@@ -321,15 +348,18 @@ ${produtosFormatados || 'Sem produtos cadastrados - direcione para equipe.'}
 
 CLIENTE: ${leadData.nome} | ${leadData.telefone}
 
-REGRAS:
+REGRAS CRÍTICAS:
+• PROIBIDO usar asteriscos (*), hashtags (#), sublinhado (_), colchetes [], parênteses (), traços (---)
+• APENAS texto simples com emojis básicos
 • Só mencione produtos da lista acima
 • Se sem produtos → direcione para equipe
 • Use preços reais, destaque economia (%)
 • SEMPRE COMPLETE frases (termine com . ! ?)
-• Máximo 3 frases completas
+• Máximo 3 frases completas e limpas
 • Seja natural, não repita "Olá [nome]!"
 • Personalize, use emojis básicos (máx 2)
 • Nunca invente informações
+• FORMATO: Texto corrido sem formatação especial
 
 Pergunta do cliente: "${userMessage}"
 
@@ -372,22 +402,27 @@ ${conversationHistory.slice(-3).map(msg => `${msg.sender}: ${msg.content}`).join
       if (aiResponse) {
         console.log('✅ Resposta IA:', aiResponse.substring(0, 100) + '...');
 
+        // Limpar caracteres especiais da resposta
+        const respostaLimpa = limparCaracteresEspeciais(aiResponse);
+        console.log('🧹 Resposta após limpeza:', respostaLimpa.substring(0, 100) + '...');
+
         // Validação de resposta completa
-        const respostaCompleta = validarRespostaCompleta(aiResponse);
+        const respostaCompleta = validarRespostaCompleta(respostaLimpa);
         if (!respostaCompleta.isComplete) {
           console.warn('⚠️ ALERTA: Resposta pode estar incompleta:', respostaCompleta.reason);
         }
 
         // Salvar conversa na tabela conversas_ia
-        await salvarConversaIA(userMessage, aiResponse, {
+        await salvarConversaIA(userMessage, respostaLimpa, {
           api_used: 'deepseek',
           produtos_disponiveis: produtosBanco.length,
           conversation_history_length: conversationHistory.length,
           resposta_completa: respostaCompleta.isComplete,
-          validacao_reason: respostaCompleta.reason
+          validacao_reason: respostaCompleta.reason,
+          caracteres_removidos: aiResponse !== respostaLimpa
         });
 
-        return aiResponse;
+        return respostaLimpa;
       } else {
         throw new Error('Resposta vazia da IA');
       }

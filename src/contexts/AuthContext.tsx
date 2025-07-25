@@ -38,67 +38,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isValidUser = !!user; // Usuário logado no Supabase Auth (independente do funcionário)
   const isAdmin = funcionario?.nivel_acesso === 'admin';
 
-  // Buscar dados do funcionário com proteção contra execuções múltiplas
+  // Buscar dados do funcionário usando função RPC segura
   const fetchFuncionario = useCallback(async (userId: string, userEmail?: string) => {
     try {
-      console.log('🔍 Buscando funcionário por user_id:', userId, 'email:', userEmail);
+      console.log('🔍 Buscando funcionário via RPC segura, email:', userEmail);
 
-      // Timeout aumentado para 10 segundos
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Timeout na busca do funcionário')), 10000)
-      );
-
-      // Primeira tentativa: buscar por user_id
-      let queryPromise = supabase
-        .from('funcionarios')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('ativo', true)
-        .single();
-
-      let { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
-
-      // Se falhou por user_id e temos email, tentar por email como fallback
-      if (error && userEmail) {
-        console.log('⚠️ Busca por user_id falhou, tentando por email:', userEmail);
-        queryPromise = supabase
-          .from('funcionarios')
-          .select('*')
-          .eq('email', userEmail)
-          .eq('ativo', true)
-          .single();
-
-        const fallbackResult = await Promise.race([queryPromise, timeoutPromise]) as any;
-        data = fallbackResult.data;
-        error = fallbackResult.error;
-
-        // Se encontrou por email, atualizar user_id
-        if (data && !error) {
-          console.log('🔄 Sincronizando user_id para funcionário encontrado por email');
-          await supabase
-            .from('funcionarios')
-            .update({ user_id: userId })
-            .eq('id', data.id);
-          data.user_id = userId; // Atualizar localmente
-        }
+      if (!userEmail) {
+        throw new Error('Email não fornecido para busca de funcionário');
       }
+
+      // Usar a função RPC que bypassa RLS para verificação de login
+      const { data, error } = await supabase.rpc('verify_user_login', {
+        email_param: userEmail
+      });
 
       if (error) {
         console.error('❌ Erro ao buscar funcionário:', error);
-        throw new Error(`Funcionário não encontrado ou inativo: ${error.message}`);
+        throw new Error(`Erro na verificação: ${error.message}`);
       }
 
-      if (!data) {
-        console.error('❌ Funcionário não encontrado para user_id:', userId, 'email:', userEmail);
-        throw new Error(`Funcionário não encontrado ou inativo.`);
+      if (!data || data.length === 0) {
+        console.error('❌ Funcionário não encontrado para email:', userEmail);
+        throw new Error('Funcionário não encontrado ou inativo');
       }
 
-      console.log('✅ Funcionário encontrado:', data);
-      setFuncionario(data as Funcionario);
-      return data;
+      const funcionarioData = data[0];
+      
+      // Converter para formato completo do funcionário
+      const funcionarioCompleto: Funcionario = {
+        id: funcionarioData.user_id, // Usando user_id como ID temporariamente
+        nome: funcionarioData.nome,
+        email: userEmail,
+        nivel_acesso: funcionarioData.nivel_acesso as 'admin' | 'funcionario',
+        ativo: funcionarioData.ativo,
+        user_id: funcionarioData.user_id
+      };
+
+      console.log('✅ Funcionário encontrado:', funcionarioCompleto);
+      setFuncionario(funcionarioCompleto);
+      return funcionarioCompleto;
     } catch (error) {
       console.error('❌ Erro na fetchFuncionario:', error);
-      setFuncionario(null); // Limpar estado em caso de erro
+      setFuncionario(null);
       throw error;
     }
   }, []);
@@ -254,6 +235,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     initAuth();
 
+    // Debounce para evitar processamento simultâneo
+    let authChangeTimeout: NodeJS.Timeout;
+    
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (isCancelled || isProcessing) return;
 
@@ -261,14 +245,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Evitar processar eventos desnecessários
       if (event === 'INITIAL_SESSION') return;
+      
+      // Debounce para evitar race conditions
+      clearTimeout(authChangeTimeout);
+      authChangeTimeout = setTimeout(async () => {
 
       if (event === 'SIGNED_IN' && session?.user) {
         isProcessing = true;
         setUser(session.user);
         try {
           const func = await fetchFuncionario(session.user.id, session.user.email);
-          // Redirecionar apenas se estiver na página de login
-          if (func && window.location.pathname === '/login') {
+          // Redirecionar sempre após login bem-sucedido
+          if (func) {
             const redirectTo = func.nivel_acesso === 'admin' ? '/admin' : '/funcionarios';
             navigate(redirectTo);
           }
@@ -284,11 +272,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (window.location.pathname !== '/login' && window.location.pathname !== '/') {
           navigate('/login');
         }
-      } else if (event === 'TOKEN_REFRESHED' && session?.user) {
-        // Apenas atualizar user, não re-buscar funcionário para evitar race conditions
-        setUser(session.user);
-        console.log('🔄 Token refreshed para:', session.user.email);
       }
+      }, 100); // 100ms debounce
     });
 
     return () => {

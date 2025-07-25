@@ -253,12 +253,12 @@ npm install
 
 ## Testing Strategy
 
-- **Framework não configurado** - No npm scripts for testing available yet
-- **Quando implementado**: React Testing Library + Vitest planejado
-- **MSW** para mock de APIs (quando implementado)  
-- **Foco em integração** - Fluxo completo Landing → Captura → IA → Conversão
-- **AI Testing**: Testes específicos para chatbot admin e validação de queries SQL
-- **Test Files**: `test-webhook-debug.js` e `test-webhook-final.js` - Utilitários de teste webhook
+- **No test framework configured** - No npm test scripts available
+- **Planned implementation**: React Testing Library + Vitest when implemented
+- **MSW** for API mocking (when implemented)  
+- **Integration focus** - Complete flow Landing → Capture → AI → Conversion
+- **AI Testing**: Specific tests for admin chatbot and SQL query validation
+- **Test utilities**: `test-webhook-debug.js` and `test-webhook-final.js` for webhook testing
 
 ## Authentication & Setup
 

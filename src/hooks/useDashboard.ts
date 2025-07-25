@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
 
 export interface DashboardMetrics {
   leadsHoje: number;
@@ -46,13 +45,15 @@ export interface LeadFilters {
 }
 
 export function useDashboard() {
-  // Buscar métricas gerais
+  // Buscar métricas gerais - Single-tenant simplificado
   const { data: metrics, isLoading: loadingMetrics, error: metricsError } = useQuery({
     queryKey: ['dashboard-metrics'],
     queryFn: async (): Promise<DashboardMetrics> => {
       const hoje = new Date().toISOString().split('T')[0];
       const semanaAtras = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
       const mesAtras = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      
+      console.log('📈 Buscando métricas dashboard - Single-tenant ASSISMAX');
 
       // Leads hoje
       const { count: leadsHoje } = await supabase
@@ -162,6 +163,8 @@ export function useDashboard() {
       };
     },
     refetchInterval: 5 * 60 * 1000, // Atualizar a cada 5 minutos
+    retry: 3,
+    retryDelay: 1000,
   });
 
   return {
@@ -231,6 +234,8 @@ export function useLeads(filters: LeadFilters = {}) {
       return data || [];
     },
     refetchInterval: 2 * 60 * 1000, // Atualizar a cada 2 minutos
+    retry: 3,
+    retryDelay: 1000,
   });
 
   const updateFilters = (newFilters: LeadFilters) => {

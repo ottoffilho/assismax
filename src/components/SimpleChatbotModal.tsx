@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -160,6 +160,9 @@ export default function SimpleChatbotModal({ open, onOpenChange }: SimpleChatbot
                     </span>
                   )}
                 </DialogTitle>
+                <DialogDescription className="sr-only">
+                  Chatbot da AssisMax para ajudar com produtos e atendimento
+                </DialogDescription>
                 <p className="text-xs text-primary-foreground/80 flex items-center gap-1">
                   <span className={`w-2 h-2 rounded-full ${isTyping ? 'bg-yellow-400 animate-pulse' : 'bg-success'}`}></span>
                   {stage === 'sales_mode' ? (

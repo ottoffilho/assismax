@@ -40,7 +40,7 @@ serve(async (req) => {
 
     const { nome, email, telefone, nivel_acesso, senha } = await req.json()
 
-    console.log('Iniciando criação de funcionário:', { email, nivel_acesso })
+    console.log('Iniciando criação de funcionário SINGLE-TENANT:', { email, nivel_acesso })
 
     // 1. Verificar se o usuário atual é admin
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -50,7 +50,7 @@ serve(async (req) => {
 
     console.log('Usuário autenticado:', user.id)
 
-    // 2. Verificar se o usuário atual é admin usando user_id
+    // 2. Verificar se o usuário atual é admin (single-tenant simplificado)
     const { data: adminUser, error: adminError } = await supabase
       .from('funcionarios')
       .select('nivel_acesso')
@@ -64,7 +64,7 @@ serve(async (req) => {
 
     console.log('Admin verificado:', adminUser)
 
-    // 3. Verificar se funcionário já existe
+    // 3. Verificar se funcionário já existe (single-tenant)
     const { data: existingFuncionario } = await supabaseAdmin
       .from('funcionarios')
       .select('id')
@@ -72,7 +72,7 @@ serve(async (req) => {
       .single()
 
     if (existingFuncionario) {
-      throw new Error('Funcionário com este email já existe')
+      throw new Error('Funcionário com este email já existe no sistema ASSISMAX')
     }
 
     // 4. Criar usuário no Auth usando admin client
@@ -94,8 +94,8 @@ serve(async (req) => {
 
     console.log('Usuário criado no Auth:', authData.user.id)
 
-    // 5. Criar funcionário na tabela usando admin client
-    console.log('Criando funcionário na tabela...')
+    // 5. Criar funcionário na tabela (single-tenant simplificado)
+    console.log('Criando funcionário na tabela single-tenant...')
     const { data: funcionario, error: funcionarioError } = await supabaseAdmin
       .from('funcionarios')
       .insert({
@@ -105,6 +105,7 @@ serve(async (req) => {
         nivel_acesso,
         user_id: authData.user.id,
         ativo: true
+        // SEM empresa_id - single-tenant ASSISMAX
       })
       .select()
       .single()
