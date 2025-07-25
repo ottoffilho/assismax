@@ -73,7 +73,7 @@ export default function HeroSection({ onOpenModal, onOpenChat }: HeroSectionProp
           {/* Business Hours */}
           <div className="flex items-center justify-center gap-2 text-white/80 animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
             <Clock className="w-4 h-4" />
-            <span className="text-sm">Segunda a Sábado: 7h às 18h</span>
+            <span className="text-sm">Segunda a Sábado: 7:30h às 17h</span>
           </div>
         </div>
       </div>

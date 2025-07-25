@@ -101,12 +101,29 @@ Esta é a página que seus clientes acessarão para:
 
 ---
 
-## 📞 SUPORTE TÉCNICO
+## � ACESSO AO EMAIL CORPORATIVO
+
+### Sistema de Email
+
+**URL de Acesso:** `https://titan.hostgator.com.br/login/`
+
+**Credenciais:**
+- **Login:** contato@assismax.com.br
+- **Senha:** AssisMax123#
+
+**IMPORTANTE:** 
+- Use este email para comunicações oficiais do sistema
+- Monitore regularmente para acompanhar notificações
+- Mantenha as credenciais em local seguro
+
+---
+
+## �📞 SUPORTE TÉCNICO
 
 Em caso de dúvidas ou problemas:
 
-**WhatsApp:** (XX) XXXXX-XXXX
-**Email:** suporte@assismax.com.br
+**WhatsApp:** +55 61 99159-7126
+**Email:** contato@assismax.com.br
 **Horário:** Segunda a Sexta, 9h às 18h
 
 ---

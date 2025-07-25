@@ -185,10 +185,10 @@ npm install
 ## Code Standards
 
 ### Development Rules Integration
-- **Cursor/Augment Rules**: Comprehensive development guidelines in `.augment/rules/rules.md`
-- **Business Context**: Specific patterns for atacarejo lead capture domain
-- **Security Focus**: LGPD compliance and API integration patterns enforced
-- **Code Quality**: DRY principles with reusable ASSISMAX components
+- **Augment Rules**: Comprehensive development guidelines in `.augment/rules/rules.md` and `.augment/rules/project-rules.md`
+- **Business Context**: Specific patterns for atacarejo lead capture domain with ASSISMAX-specific components
+- **Security Focus**: LGPD compliance and API integration patterns enforced through automated checks
+- **Code Quality**: DRY principles with reusable ASSISMAX components and 400-500 line file limits
 
 ### TypeScript
 - **Permissive mode** - Configurado para desenvolvimento ágil com:
@@ -259,6 +259,7 @@ npm install
 - **Integration focus** - Complete flow Landing → Capture → AI → Conversion
 - **AI Testing**: Specific tests for admin chatbot and SQL query validation
 - **Test utilities**: `test-webhook-debug.js` and `test-webhook-final.js` for webhook testing
+- **Rules-based Testing**: Follow patterns defined in `.augment/rules/` for comprehensive test coverage
 
 ## Authentication & Setup
 
@@ -287,7 +288,7 @@ npm install
 ## Configuration
 
 ### Build & Development
-- **Vite**: Host `::` porta 8080, React SWC plugin, Lovable tagger em dev
+- **Vite**: Host `::` porta 8081, React SWC plugin, Lovable tagger em dev
 - **Path Aliases**: `@/` → `./src/` configurado em Vite + TypeScript
 - **PostCSS**: Tailwind CSS + Autoprefixer pipeline
 - **TypeScript Project References**: 

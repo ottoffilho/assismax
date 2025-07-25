@@ -31,7 +31,7 @@ export default function Footer({ onOpenModal }: FooterProps) {
                 </div>
                 <div className="flex items-center gap-3">
                   <Phone className="w-5 h-5 text-accent" />
-                  <span className="text-sm">(61) 99999-9999</span>
+                  <span className="text-sm">+55 61 99159-7126</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <Mail className="w-5 h-5 text-accent" />
@@ -47,15 +47,8 @@ export default function Footer({ onOpenModal }: FooterProps) {
                 <div className="flex items-center gap-3">
                   <Clock className="w-5 h-5 text-accent" />
                   <div>
-                    <p className="font-medium">Segunda a Sexta</p>
-                    <p className="text-white/80 text-sm">7:00 às 18:00</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Clock className="w-5 h-5 text-accent" />
-                  <div>
-                    <p className="font-medium">Sábado</p>
-                    <p className="text-white/80 text-sm">7:00 às 16:00</p>
+                    <p className="font-medium">Segunda a Sábado</p>
+                    <p className="text-white/80 text-sm">07:30 às 17:00</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -101,19 +94,22 @@ export default function Footer({ onOpenModal }: FooterProps) {
                 <div className="flex gap-4">
                   <button 
                     className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110"
-                    onClick={() => window.open('https://wa.me/556199999999', '_blank')}
+                    onClick={() => window.open('https://wa.me/5561991597126', '_blank')}
+                    title="WhatsApp"
                   >
                     <MessageCircle className="w-5 h-5" />
                   </button>
                   <button 
                     className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110"
                     onClick={() => window.open('https://instagram.com/assismaxatacarejooficial', '_blank')}
+                    title="Instagram"
                   >
                     <Instagram className="w-5 h-5" />
                   </button>
                   <button 
                     className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110"
                     onClick={() => window.open('https://facebook.com/assismaxatacarejooficial', '_blank')}
+                    title="Facebook"
                   >
                     <Facebook className="w-5 h-5" />
                   </button>
@@ -129,7 +125,7 @@ export default function Footer({ onOpenModal }: FooterProps) {
         <div className="container-responsive">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-white/70">
             <div className="text-center md:text-left">
-              <p>&copy; 2024 AssisMax Atacarejo. Todos os direitos reservados.</p>
+              <p>&copy; 2025 AssisMax Atacarejo. Todos os direitos reservados.</p>
             </div>
             <div className="flex gap-6 text-center md:text-right">
               <button className="hover:text-accent transition-colors">
