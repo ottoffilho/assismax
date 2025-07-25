@@ -35,10 +35,14 @@ interface CollectedData {
 }
 
 interface ConversationState {
-  stage: 'greeting' | 'natural_conversation' | 'collecting_name' | 'collecting_phone' | 'collecting_email' | 'data_complete' | 'closing';
+  stage: 'greeting' | 'natural_conversation' | 'collecting_name' | 'collecting_phone' | 'collecting_email' | 'data_complete' | 'sales_mode' | 'extended_chat' | 'closing';
   hasIntroduced: boolean;
   needsDataCollection: boolean;
   conversation_turns: number;
+  sales_questions_count: number;
+  sales_questions_limit: number;
+  extended_questions_count: number;
+  extended_questions_limit: number;
 }
 
 export function useChatbotConversation() {
@@ -46,11 +50,17 @@ export function useChatbotConversation() {
   const { getProductResponse, getProductInfo, getAllProducts } = useProductAI();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
+  const hasStarted = useRef(false);
+  const messageCounter = useRef(0);
   const [conversationState, setConversationState] = useState<ConversationState>({
     stage: 'greeting',
     hasIntroduced: false,
     needsDataCollection: false,
-    conversation_turns: 0
+    conversation_turns: 0,
+    sales_questions_count: 0,
+    sales_questions_limit: 5,
+    extended_questions_count: 0,
+    extended_questions_limit: 5
   });
   const [collectedData, setCollectedData] = useState<CollectedData>({
     origem: 'chatbot',
@@ -66,27 +76,76 @@ export function useChatbotConversation() {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-  // Função para simular digitação
-  const typewriterEffect = useCallback(async (text: string, onUpdate: (partial: string) => void) => {
-    const words = text.split(' ');
-    let currentText = '';
+  // Função helper para fetch com timeout
+  const fetchWithTimeout = useCallback(async (url: string, options: RequestInit, timeoutMs: number = 15000) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
     
-    for (let i = 0; i < words.length; i++) {
-      currentText += (i > 0 ? ' ' : '') + words[i];
-      onUpdate(currentText);
-      
-      // Velocidade variável baseada no comprimento da palavra
-      const delay = Math.random() * 100 + 50;
-      await new Promise(resolve => setTimeout(resolve, delay));
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      return response;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      throw error;
     }
   }, []);
 
-  // Função para adicionar mensagem do bot com efeito de digitação
-  const addBotMessage = useCallback(async (content: string) => {
-    const messageId = `bot-${Date.now()}`;
-    setIsTyping(true);
+  // Função para simular digitação realística (caractere por caractere)
+  const typewriterEffect = useCallback(async (text: string, onUpdate: (partial: string) => void) => {
+    console.log('🖋️ Iniciando efeito de digitação:', text.substring(0, 50) + '...');
+    let currentText = '';
     
-    // Adiciona mensagem vazia com flag isTyping
+    for (let i = 0; i < text.length; i++) {
+      currentText += text[i];
+      onUpdate(currentText);
+      
+      // Velocidade realística mais lenta para ser visível
+      let delay = 60; // Base de 60ms por caractere (mais lento)
+      
+      // Pausas maiores após pontuação
+      if (text[i] === '.' || text[i] === '!' || text[i] === '?') {
+        delay = 500;
+      } else if (text[i] === ',' || text[i] === ';') {
+        delay = 250;
+      } else if (text[i] === ' ') {
+        delay = 80;
+      } else {
+        // Variação natural na velocidade de digitação
+        delay += Math.random() * 60 - 30; // ±30ms de variação
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, Math.max(30, delay)));
+    }
+    console.log('✅ Efeito de digitação finalizado');
+  }, []);
+
+  const addBotMessage = useCallback(async (content: string) => {
+    const timestamp = Date.now();
+    console.log(`🔥 [${timestamp}] RADICAL: Tentativa de adicionar mensagem`);
+    
+    // PROTEÇÃO RADICAL: Se já existe qualquer mensagem, PARAR
+    if (messages.length > 0) {
+      console.log(`🛑 [${timestamp}] RADICAL: JÁ EXISTEM ${messages.length} MENSAGENS - CANCELANDO`);
+      return;
+    }
+
+    // PROTEÇÃO RADICAL: Se isTyping, PARAR
+    if (isTyping) {
+      console.log(`🛑 [${timestamp}] RADICAL: JÁ ESTÁ DIGITANDO - CANCELANDO`);
+      return;
+    }
+
+    // ÚNICA EXECUÇÃO POSSÍVEL
+    console.log(`✅ [${timestamp}] RADICAL: PRIMEIRA E ÚNICA MENSAGEM SENDO ADICIONADA`);
+    
+    setIsTyping(true);
+    messageCounter.current = 1;
+    const messageId = `radical-${timestamp}`;
+
     const newMessage: Message = {
       id: messageId,
       content: '',
@@ -94,24 +153,24 @@ export function useChatbotConversation() {
       timestamp: new Date(),
       isTyping: true
     };
-    
-    setMessages(prev => [...prev, newMessage]);
-    
-    // Simula digitação
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
+
+    // Adicionar mensagem vazia primeiro
+    setMessages([newMessage]);
+
+    // Delay para efeito visual mais longo
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    // Efeito de digitação
     await typewriterEffect(content, (partial) => {
-      setMessages(prev => prev.map(msg => 
-        msg.id === messageId ? { ...msg, content: partial } : msg
-      ));
+      setMessages([{ ...newMessage, content: partial }]);
     });
-    
-    // Finaliza digitação
-    setMessages(prev => prev.map(msg => 
-      msg.id === messageId ? { ...msg, isTyping: false } : msg
-    ));
+
+    // Finalizar mensagem
+    setMessages([{ ...newMessage, content, isTyping: false }]);
     setIsTyping(false);
-  }, [typewriterEffect]);
+
+    console.log(`🎉 [${timestamp}] RADICAL: MENSAGEM ÚNICA FINALIZADA`);
+  }, [typewriterEffect, messages.length, isTyping]);
 
   // Função para enviar dados ao webhook
   const sendToWebhook = useCallback(async (data: CollectedData) => {
@@ -162,7 +221,74 @@ export function useChatbotConversation() {
     }
   }, [toast]);
 
-  // Função para chamar API do DeepSeek
+  // Função para chamar API do DeepSeek no modo extended chat
+  const callDeepSeekExtendedChat = useCallback(async (userMessage: string, conversationHistory: any[]) => {
+    try {
+      const deepseekApiKey = import.meta.env.VITE_DEEPSEEK_API_KEY;
+      if (!deepseekApiKey) {
+        throw new Error('DEEPSEEK_API_KEY não configurada');
+      }
+
+      const contextPrompt = `Você é o Assis, dono da AssisMax, atacarejo em Valparaíso de Goiás. 
+
+Contexto do negócio:
+- Atacarejo com produtos básicos: arroz, feijão, óleo, café, leite, bebidas
+- Preços especiais para famílias
+- Atendimento personalizado
+- R$ 500k/mês de faturamento
+- 3 funcionários
+- Localização: Valparaíso de Goiás - GO
+
+Personalidade:
+- Amigável e acolhedor
+- Conhece bem os produtos
+- Foca em economia para o cliente
+- Usa emojis moderadamente
+- Responde de forma concisa (máximo 3 frases)
+
+O cliente já passou pelo processo de captura de dados e fez perguntas sobre produtos. Agora está no modo de conversa livre. Responda como o Assis de forma natural e útil.`;
+
+      const messages = [
+        { role: 'system', content: contextPrompt },
+        ...conversationHistory.slice(-10), // Últimas 10 mensagens para contexto
+        { role: 'user', content: userMessage }
+      ];
+
+      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${deepseekApiKey}`
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: messages,
+          max_tokens: 150,
+          temperature: 0.8
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro na API DeepSeek');
+      }
+
+      const result = await response.json();
+      const aiMessage = result.choices?.[0]?.message?.content;
+      
+      if (!aiMessage) {
+        throw new Error('Resposta vazia da IA');
+      }
+      
+      return aiMessage;
+      
+    } catch (error) {
+      console.error('Erro ao chamar DeepSeek Extended Chat:', error);
+      // Mensagem de fallback se a IA falhar
+      return "Desculpe, tive um probleminha técnico momentâneo! Mas nossa equipe pode te ajudar pelo WhatsApp com qualquer dúvida! 😊";
+    }
+  }, []);
+
+  // Função original para confirmação de dados (mantida para compatibilidade)
   const callDeepSeekAPI = useCallback(async (data: CollectedData) => {
     try {
       await addBotMessage("Obrigado! Processando seus dados... 🤔");
@@ -173,11 +299,16 @@ Contexto: Somos a AssisMax, atacarejo em Valparaíso de Goiás com preços justo
 
 Gere uma mensagem de confirmação curta e acolhedora mencionando que a equipe entrará em contato em breve. Máximo 2 frases. Assine como Assis.`;
 
+      const deepseekApiKey = import.meta.env.VITE_DEEPSEEK_API_KEY;
+      if (!deepseekApiKey) {
+        throw new Error('DEEPSEEK_API_KEY não configurada');
+      }
+
       const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer sk-dd3c62196e5246b4902f20c7aec36864`
+          'Authorization': `Bearer ${deepseekApiKey}`
         },
         body: JSON.stringify({
           model: 'deepseek-chat',
@@ -212,15 +343,73 @@ Gere uma mensagem de confirmação curta e acolhedora mencionando que a equipe e
     }
   }, [addBotMessage]);
 
+  // Função para ativar modo vendas após captura de lead
+  const activateSalesMode = useCallback(async () => {
+    setConversationState(prev => ({
+      ...prev,
+      stage: 'sales_mode',
+      sales_questions_count: 0
+    }));
+
+    await addBotMessage(`Perfeito ${collectedData.nome}! 🎯 Agora vou te ajudar com informações sobre nossos produtos e vantagens do atacarejo! Pode me perguntar o que quiser sobre preços, produtos ou como economizar comprando conosco! 😊`);
+  }, [addBotMessage, collectedData.nome]);
+
+  // Função para ativar modo chat estendido após sales_mode
+  const activateExtendedChat = useCallback(async () => {
+    setConversationState(prev => ({
+      ...prev,
+      stage: 'extended_chat',
+      extended_questions_count: 0
+    }));
+
+    await addBotMessage(`${collectedData.nome}, agora você pode me fazer mais perguntas sobre qualquer coisa relacionada ao nosso negócio! 💬 Tenho mais tempo para conversar e te ajudar com o que precisar! 😊`);
+  }, [addBotMessage, collectedData.nome]);
+
   // Função para chamar a Edge Function de conversa IA
   const callAIConversation = useCallback(async (userMessage: string) => {
     try {
+      // Adicionar mensagem de "pensando" específica para modo vendas
+      const thinkingMessages = conversationState.stage === 'sales_mode' ? [
+        "Consultando nossos produtos e preços... 🤔",
+        "Verificando preços de atacado... 💰",
+        "Analisando nosso estoque... 📦",
+        "Calculando sua economia... 💡",
+        "Preparando oferta especial... 🎯"
+      ] : [
+        "Pensando na melhor resposta... 🤔",
+        "Analisando sua mensagem... 💭"
+      ];
+      
+      let currentMessageIndex = 0;
+      const randomThinking = thinkingMessages[Math.floor(Math.random() * thinkingMessages.length)];
+      
+      // Mostrar mensagem de "pensando"
+      setIsTyping(true);
+      const thinkingId = `thinking-${Date.now()}`;
+      setMessages(prev => [...prev, {
+        id: thinkingId,
+        content: randomThinking,
+        sender: 'bot',
+        timestamp: new Date(),
+        isTyping: true
+      }]);
+      
+      // Atualizar mensagem de pensamento a cada 3 segundos para dar dinamismo
+      const thinkingInterval = setInterval(() => {
+        currentMessageIndex = (currentMessageIndex + 1) % thinkingMessages.length;
+        setMessages(prev => prev.map(msg => 
+          msg.id === thinkingId 
+            ? { ...msg, content: thinkingMessages[currentMessageIndex] }
+            : msg
+        ));
+      }, 3000);
+      
       const conversationHistory = messages.map(msg => ({
         role: msg.sender === 'user' ? 'user' : 'assistant' as const,
         content: msg.content
       }));
 
-      const response = await fetch(`${supabaseUrl}/functions/v1/ai-conversation`, {
+      const response = await fetchWithTimeout(`${supabaseUrl}/functions/v1/ai-conversation`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -233,9 +422,14 @@ Gere uma mensagem de confirmação curta e acolhedora mencionando que a equipe e
             nome: collectedData.nome,
             telefone: collectedData.telefone,
             email: collectedData.email
+          },
+          conversation_state: {
+            stage: conversationState.stage,
+            sales_questions_count: conversationState.sales_questions_count,
+            sales_questions_limit: conversationState.sales_questions_limit
           }
         })
-      });
+      }, 15000); // 15 segundos de timeout
 
       if (!response.ok) {
         throw new Error('Erro na comunicação com IA');
@@ -267,12 +461,28 @@ Gere uma mensagem de confirmação curta e acolhedora mencionando que a equipe e
         }));
 
         // Atualizar estado da conversa
-        setConversationState(prev => ({
-          ...prev,
-          conversation_turns: prev.conversation_turns + 1,
-          needsDataCollection: result.should_collect_data,
-          stage: result.should_collect_data ? 'data_collection' : 'natural_conversation'
-        }));
+        if (conversationState.stage === 'sales_mode') {
+          const newCount = conversationState.sales_questions_count + 1;
+          setConversationState(prev => ({
+            ...prev,
+            conversation_turns: prev.conversation_turns + 1,
+            sales_questions_count: newCount
+          }));
+          
+          // Se chegou ao limite, ativar modo chat estendido
+          if (newCount >= conversationState.sales_questions_limit) {
+            setTimeout(async () => {
+              await activateExtendedChat();
+            }, 2000);
+          }
+        } else {
+          setConversationState(prev => ({
+            ...prev,
+            conversation_turns: prev.conversation_turns + 1,
+            needsDataCollection: result.should_collect_data,
+            stage: result.should_collect_data ? 'data_collection' : 'natural_conversation'
+          }));
+        }
 
         // Enviar para webhook se tiver dados completos
         if (result.next_actions?.includes('send_to_webhook') && 
@@ -280,22 +490,38 @@ Gere uma mensagem de confirmação curta e acolhedora mencionando que a equipe e
             !webhookSent.current) {
           await sendToWebhook(collectedData);
           webhookSent.current = true;
+          
+          // Ativar modo vendas após enviar webhook
+          setTimeout(() => {
+            activateSalesMode();
+          }, 3000);
         }
 
+        // Limpar interval e remover mensagem de "pensando"
+        clearInterval(thinkingInterval);
+        setMessages(prev => prev.filter(msg => msg.id !== thinkingId));
+        setIsTyping(false);
+        
         return result.response;
       } else {
         throw new Error(result.error || 'Erro na resposta da IA');
       }
     } catch (error) {
       console.error('Erro ao chamar IA:', error);
+      
+      // Limpar interval e remover mensagem de "pensando" em caso de erro
+      clearInterval(thinkingInterval);
+      setMessages(prev => prev.filter(msg => msg.id !== thinkingId));
+      setIsTyping(false);
+      
       // Fallback para mensagem padrão
       return "Desculpe, tive um probleminha técnico. Mas nossa equipe pode te ajudar pelo WhatsApp! 😊";
     }
-  }, [messages, collectedData, supabaseUrl, supabaseAnonKey, sendToWebhook]);
+  }, [messages, collectedData, supabaseUrl, supabaseAnonKey, sendToWebhook, conversationState.stage, conversationState.sales_questions_count, conversationState.sales_questions_limit, fetchWithTimeout, activateSalesMode, addBotMessage]);
 
   // Função para analisar e coletar dados da mensagem
   const analyzeAndCollectData = useCallback((userMessage: string) => {
-    let updatedData = { ...collectedData };
+    const updatedData = { ...collectedData };
     let nextStage = conversationState.stage;
 
     // Sempre tentar extrair dados da mensagem
@@ -306,15 +532,15 @@ Gere uma mensagem de confirmação curta e acolhedora mencionando que a equipe e
 
     // Atualizar dados se encontrados
     if (extractedName && !updatedData.nome) {
-      updatedData.nome = extractedName;
+      (updatedData as any).nome = extractedName;
     }
 
     if (extractedPhone && !updatedData.telefone) {
-      updatedData.telefone = extractedPhone;
+      (updatedData as any).telefone = extractedPhone;
     }
 
     if (emailMatch && !updatedData.email) {
-      updatedData.email = emailMatch[0];
+      (updatedData as any).email = emailMatch[0];
     }
 
     // Determinar próximo estágio baseado nos dados coletados e estágio atual
@@ -397,8 +623,13 @@ Gere uma mensagem de confirmação curta e acolhedora mencionando que a equipe e
     if (nextStage === 'data_complete' && updatedData.nome && updatedData.telefone && !webhookSent.current) {
       await sendToWebhook(updatedData);
       webhookSent.current = true;
+      
+      // Ativar modo vendas após enviar webhook
+      setTimeout(() => {
+        activateSalesMode();
+      }, 3000);
     }
-  }, [analyzeAndCollectData, generateContextualResponse, addBotMessage, sendToWebhook]);
+  }, [analyzeAndCollectData, generateContextualResponse, addBotMessage, sendToWebhook, activateSalesMode]);
 
   // Função para enviar mensagem
   const sendMessage = useCallback(async (content: string) => {
@@ -414,38 +645,133 @@ Gere uma mensagem de confirmação curta e acolhedora mencionando que a equipe e
     
     setMessages(prev => [...prev, userMessage]);
     
-    // Processa a mensagem
-    await processUserMessage(content);
-  }, [isTyping, processUserMessage]);
+    // Processa a mensagem dependendo do estágio
+    if (conversationState.stage === 'sales_mode') {
+      // No modo vendas, usar IA inteligente
+      const aiResponse = await callAIConversation(content);
+      if (aiResponse) {
+        await addBotMessage(aiResponse);
+      }
+    } else if (conversationState.stage === 'extended_chat') {
+      // No modo chat estendido, usar DeepSeek API
+      setIsTyping(true);
+      
+      // Mensagens de "pensando" específicas para extended chat
+      const thinkingMessages = [
+        "Analisando sua pergunta... 🤔",
+        "Consultando minhas informações... 📊",
+        "Preparando resposta personalizada... 🎯",
+        "Verificando detalhes... 🔍"
+      ];
+      
+      const randomThinking = thinkingMessages[Math.floor(Math.random() * thinkingMessages.length)];
+      const thinkingId = `thinking-extended-${Date.now()}`;
+      
+      setMessages(prev => [...prev, {
+        id: thinkingId,
+        content: randomThinking,
+        sender: 'bot',
+        timestamp: new Date(),
+        isTyping: true
+      }]);
+      
+      // Converter histórico para formato da API
+      const conversationHistory = messages.map(msg => ({
+        role: msg.sender === 'user' ? 'user' : 'assistant',
+        content: msg.content
+      }));
+      
+      try {
+        const aiResponse = await callDeepSeekExtendedChat(content, conversationHistory);
+        
+        // Remover mensagem de "pensando"
+        setMessages(prev => prev.filter(msg => msg.id !== thinkingId));
+        setIsTyping(false);
+        
+        // Adicionar resposta da IA
+        await addBotMessage(aiResponse);
+        
+        // Atualizar contador de perguntas
+        const newExtendedCount = conversationState.extended_questions_count + 1;
+        setConversationState(prev => ({
+          ...prev,
+          extended_questions_count: newExtendedCount,
+          conversation_turns: prev.conversation_turns + 1
+        }));
+        
+        // Se chegou ao limite de perguntas estendidas, encerrar
+        if (newExtendedCount >= conversationState.extended_questions_limit) {
+          setTimeout(async () => {
+            await addBotMessage(`${collectedData.nome}, foi incrível conversar com você! 😊 Nossa equipe entrará em contato no WhatsApp ${collectedData.telefone} para continuar te ajudando. Até mais! 👋`);
+            setConversationState(prev => ({ ...prev, stage: 'closing' }));
+          }, 2000);
+        }
+        
+      } catch (error) {
+        console.error('Erro no extended chat:', error);
+        
+        // Remover mensagem de "pensando" em caso de erro
+        setMessages(prev => prev.filter(msg => msg.id !== thinkingId));
+        setIsTyping(false);
+        
+        await addBotMessage("Desculpe, tive um probleminha técnico! Mas nossa equipe pode te ajudar pelo WhatsApp com qualquer dúvida! 😊");
+      }
+    } else {
+      // Nos outros estágios, usar lógica de captura de dados
+      await processUserMessage(content);
+    }
+  }, [isTyping, processUserMessage, conversationState.stage, callAIConversation, addBotMessage]);
 
-  // Função para iniciar conversa
+  // VERSÃO RADICAL: UMA ÚNICA VERIFICAÇÃO
   const startConversation = useCallback(async () => {
-    const saudacoes = [
-      "Oi! Eu sou o Assis, dono da AssisMax! 👋 Vou te ajudar a conseguir os melhores preços de atacado! Para começar, qual é seu nome?",
-      "Olá! Prazer, sou o Assis da AssisMax! 😊 Quero te mostrar nossos preços especiais de atacado! Qual seu nome?",
-      "Oi! Sou o Assis, dono do atacarejo AssisMax! 🛒 Vou te enviar ofertas exclusivas! Me fala seu nome?",
-      "E aí! Assis aqui da AssisMax! 💰 Tenho preços incríveis pra te mostrar! Qual seu nome?"
-    ];
+    const timestamp = Date.now();
+    console.log(`🔥 [${timestamp}] RADICAL: startConversation chamada`);
 
-    const saudacaoAleatoria = saudacoes[Math.floor(Math.random() * saudacoes.length)];
-    await addBotMessage(saudacaoAleatoria);
+    // UMA ÚNICA VERIFICAÇÃO RADICAL: Se já tem mensagens, PARAR
+    if (messages.length > 0) {
+      console.log(`🛑 [${timestamp}] RADICAL: JÁ EXISTEM MENSAGENS (${messages.length}) - CANCELANDO TUDO`);
+      return;
+    }
 
+    // Marcar como iniciado
+    hasStarted.current = true;
+    console.log(`🔥 [${timestamp}] RADICAL: EXECUTANDO ÚNICA INICIALIZAÇÃO`);
+
+    // Mensagem única
+    const saudacao = "Oi! Eu sou o Assis, dono da AssisMax! 👋 Vou te ajudar a conseguir os melhores preços de atacado! Para começar, qual é seu nome?";
+
+    // Chamar addBotMessage que já tem suas próprias proteções
+    await addBotMessage(saudacao);
+
+    // Atualizar estado
     setConversationState(prev => ({
       ...prev,
       stage: 'collecting_name',
       hasIntroduced: true
     }));
-  }, [addBotMessage]);
 
-  // Função para resetar conversa completamente
+    console.log(`🎉 [${timestamp}] RADICAL: CONVERSA INICIADA COM SUCESSO`);
+  }, [addBotMessage, messages.length]);
+
+  // VERSÃO RADICAL: RESET ABSOLUTO
   const resetConversation = useCallback(() => {
-    setMessages([]);
+    const timestamp = Date.now();
+    console.log(`🔥 [${timestamp}] RADICAL: RESET TOTAL`);
+
+    // RESET ABSOLUTO - TUDO ZERADO
+    hasStarted.current = false;
+    messageCounter.current = 0;
+    setMessages([]); // ARRAY VAZIO ABSOLUTO
     setIsTyping(false);
     setConversationState({
       stage: 'greeting',
       hasIntroduced: false,
       needsDataCollection: false,
-      conversation_turns: 0
+      conversation_turns: 0,
+      sales_questions_count: 0,
+      sales_questions_limit: 5,
+      extended_questions_count: 0,
+      extended_questions_limit: 5
     });
     setCollectedData({
       origem: 'chatbot',
@@ -457,6 +783,8 @@ Gere uma mensagem de confirmação curta e acolhedora mencionando que a equipe e
       contexto_conversa: ''
     });
     webhookSent.current = false;
+
+    console.log(`🎉 [${timestamp}] RADICAL: RESET COMPLETO - ESTADO LIMPO`);
   }, []);
 
   return {
@@ -466,6 +794,8 @@ Gere uma mensagem de confirmação curta e acolhedora mencionando que a equipe e
     collectedData,
     sendMessage,
     startConversation,
-    resetConversation
+    resetConversation,
+    activateSalesMode,
+    activateExtendedChat
   };
 }

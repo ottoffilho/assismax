@@ -7,6 +7,9 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import Produtos from "./pages/Produtos";
+import Categorias from "./pages/Categorias";
+import CategoriaDetalhes from "./pages/CategoriaDetalhes";
+import TestConversas from "./pages/TestConversas";
 import Login from "./pages/Login";
 import Setup from "./pages/Setup";
 import NotFound from "./pages/NotFound";
@@ -30,6 +33,9 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/produtos" element={<Produtos />} />
+            <Route path="/categorias" element={<Categorias />} />
+            <Route path="/categoria/:categoria" element={<CategoriaDetalhes />} />
+            <Route path="/test-conversas" element={<TestConversas />} />
             <Route path="/setup" element={<Setup />} />
             <Route path="/login" element={<Login />} />
             <Route 

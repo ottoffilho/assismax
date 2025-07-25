@@ -1,0 +1,311 @@
+{
+  "name": "assismax",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "02bff0ac-4268-44a9-afee-15763ceec8f0",
+              "name": "nome",
+              "value": "={{ $json.body.nome }}",
+              "type": "string"
+            },
+            {
+              "id": "23461847-7cdb-48fd-83ba-d39135faddc6",
+              "name": "email",
+              "value": "={{ $json.body.email }}",
+              "type": "string"
+            },
+            {
+              "id": "ccd6e2c5-d555-4d58-b2bb-1bc4979cd8aa",
+              "name": "telefone",
+              "value": "={{ $json.body.telefone }}",
+              "type": "string"
+            },
+            {
+              "id": "63cfaa87-cb1f-4c9b-8482-2f5c02985b8c",
+              "name": "origem",
+              "value": "={{ $json.body.origem }}",
+              "type": "string"
+            },
+            {
+              "id": "f43ba0c5-2ef3-4bf5-bc5f-710447052cc3",
+              "name": "data",
+              "value": "={{ $json.body.data }}",
+              "type": "string"
+            },
+            {
+              "id": "2348f71a-6a28-4108-af4c-800d29f08a90",
+              "name": "status",
+              "value": "novo",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -208,
+        176
+      ],
+      "id": "524714b3-adc8-4205-89ff-756fd499d5ed",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1gMQFqvw27ww7ZNodfhQW7_wmUxDxSl6lL6A-_oxq3FU",
+          "mode": "list",
+          "cachedResultName": "leads_assis",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1gMQFqvw27ww7ZNodfhQW7_wmUxDxSl6lL6A-_oxq3FU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Página1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1gMQFqvw27ww7ZNodfhQW7_wmUxDxSl6lL6A-_oxq3FU/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "nome": "={{ $json.nome }}",
+            "telefone": "={{ $json.telefone }}",
+            "email": "={{ $json.email }}",
+            "origem": "={{ $json.origem }}",
+            "data": "={{ $json.data }}",
+            "status": "={{ $json.status }}"
+          },
+          "matchingColumns": [
+            "email"
+          ],
+          "schema": [
+            {
+              "id": "nome",
+              "displayName": "nome",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "telefone",
+              "displayName": "telefone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "origem",
+              "displayName": "origem",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "data",
+              "displayName": "data",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        48,
+        144
+      ],
+      "id": "c736a79f-a001-43b7-8446-36a4ae85c802",
+      "name": "leads_interessados",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "6RcUWhM6KRoxYjnJ",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "assismaxatacarejo@gmail.com",
+        "subject": "=🎯 Novo Lead ASSISMAX - {{ $('Edit Fields').item.json.nome }}",
+        "emailType": "text",
+        "message": "=🎯 NOVO LEAD ASSISMAX ATACAREJO\n\n📋 DADOS DO CLIENTE:\n• Nome: {{ $('Edit Fields').item.json.nome }}\n• Telefone: {{ $('Edit Fields').item.json.telefone }}\n• Email: {{ $('Edit Fields').item.json.email }}\n• Origem: {{ $('Edit Fields').item.json.origem }}\n• Data: {{ $('Edit Fields').item.json.data }}\n• Status: {{ $('Edit Fields').item.json.status }}\n\n🚀 PRÓXIMO PASSO:\nEntre em contato nas próximas 2 horas para maximizar conversão!\n\n💰 ASSISMAX - Atacarejo que cabe no seu bolso\nValparaíso de Goiás - GO",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        592,
+        192
+      ],
+      "id": "e357ea07-946f-414a-ad5e-6f05b9adafd4",
+      "name": "Send a message",
+      "webhookId": "751111ac-bc1f-4291-8a8e-500c32873a04",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "wYILsBTFmKGmnChq",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "https://assismax.app.n8n.cloud/webhook/assismax",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -480,
+        80
+      ],
+      "id": "0a45bb5c-46f3-4063-87cf-8f6a507f8acb",
+      "name": "Webhook",
+      "webhookId": "315d61a2-5f21-4e2d-a8bf-4d7c8b7fb85d"
+    },
+    {
+      "parameters": {
+        "tableId": "leads",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "nome",
+              "fieldValue": "={{ $json.nome }}"
+            },
+            {
+              "fieldId": "telefone",
+              "fieldValue": "={{ $json.telefone }}"
+            },
+            {
+              "fieldId": "email",
+              "fieldValue": "={{ $json.email }}"
+            },
+            {
+              "fieldId": "origem",
+              "fieldValue": "={{ $json.origem }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "={{ $json.status }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        336,
+        176
+      ],
+      "id": "6c06a460-e6f5-420c-9cd0-a3cc70c94b66",
+      "name": "Leads_supabase",
+      "credentials": {
+        "supabaseApi": {
+          "id": "DH0xUwgGw4FUIhsB",
+          "name": "Supabase account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "leads_interessados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "leads_interessados": {
+      "main": [
+        [
+          {
+            "node": "Leads_supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leads_supabase": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "d9b9ff46-5a36-4bad-8ae4-c38981bc5212",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "60460c348a4202c3497158adc2d16244dc9a9fab1fe20744fb2bd4d5a2a5ba02"
+  },
+  "id": "Ms6xfVmxUk7xnb69",
+  "tags": []
+}

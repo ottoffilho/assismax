@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,7 +10,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, Filter, X } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Search, Filter, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { LeadFilters } from '@/hooks/useDashboard';
 
 interface LeadsFiltersProps {
@@ -20,14 +21,25 @@ interface LeadsFiltersProps {
 }
 
 export function LeadsFilters({ filters, onFiltersChange, onClearFilters }: LeadsFiltersProps) {
+  const [isOpen, setIsOpen] = useState(false);
+
   const handleFilterChange = (key: keyof LeadFilters, value: string) => {
     const newValue = value === 'all' ? undefined : value;
     onFiltersChange({ [key]: newValue });
   };
 
-  const activeFiltersCount = Object.values(filters).filter(value => 
+  const activeFiltersCount = Object.values(filters).filter(value =>
     value !== undefined && value !== ''
   ).length;
+
+  // Abrir automaticamente quando há filtros ativos
+  useEffect(() => {
+    if (activeFiltersCount > 0 && !isOpen) {
+      setIsOpen(true);
+    }
+  }, [activeFiltersCount, isOpen]);
+
+
 
   const getActiveFilters = () => {
     const active = [];
@@ -89,19 +101,41 @@ export function LeadsFilters({ filters, onFiltersChange, onClearFilters }: Leads
   };
 
   return (
-    <Card>
-      <CardHeader className="pb-4">
-        <CardTitle className="text-lg flex items-center gap-2">
-          <Filter className="w-5 h-5" />
-          Filtros
-          {activeFiltersCount > 0 && (
-            <Badge variant="secondary">
-              {activeFiltersCount}
-            </Badge>
-          )}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <Card>
+        <CollapsibleTrigger asChild>
+          <CardHeader className="pb-4 cursor-pointer hover:bg-muted/50 transition-colors">
+            <CardTitle className="text-lg flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Filter className="w-5 h-5" />
+                Filtros
+                {activeFiltersCount > 0 && (
+                  <Badge variant="secondary">
+                    {activeFiltersCount}
+                  </Badge>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {activeFiltersCount > 0 && !isOpen && (
+                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                    <span>{activeFiltersCount} filtro{activeFiltersCount > 1 ? 's' : ''} ativo{activeFiltersCount > 1 ? 's' : ''}</span>
+                    <span>•</span>
+                    <span className="max-w-[200px] truncate">
+                      {getActiveFilters().map(f => f.label.split(': ')[1] || f.label).join(', ')}
+                    </span>
+                  </div>
+                )}
+                {isOpen ? (
+                  <ChevronUp className="w-4 h-4" />
+                ) : (
+                  <ChevronDown className="w-4 h-4" />
+                )}
+              </div>
+            </CardTitle>
+          </CardHeader>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <CardContent className="space-y-4 pt-0">
         {/* Busca por nome, email ou telefone */}
         <div className="relative">
           <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -191,8 +225,11 @@ export function LeadsFilters({ filters, onFiltersChange, onClearFilters }: Leads
                 >
                   {filter.label}
                   <button
+                    type="button"
                     onClick={() => removeFilter(filter.key)}
                     className="ml-1 hover:bg-muted rounded-full p-0.5"
+                    title={`Remover filtro: ${filter.label}`}
+                    aria-label={`Remover filtro: ${filter.label}`}
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -201,7 +238,9 @@ export function LeadsFilters({ filters, onFiltersChange, onClearFilters }: Leads
             </div>
           </div>
         )}
-      </CardContent>
-    </Card>
+          </CardContent>
+        </CollapsibleContent>
+      </Card>
+    </Collapsible>
   );
 }

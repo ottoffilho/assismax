@@ -15,7 +15,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Development Commands
 
 ```bash
-# Start development server (port 8080)
+# Start development server (port 8081)
 npm run dev
 
 # Build for production
@@ -71,7 +71,7 @@ npm install
 - **N8N** - Workflow automation e integrações com webhooks
 - **Google Analytics** - Tracking opcional
 
-### Edge Functions
+### Edge Functions (7 functions production-ready)
 - `capture-lead` - Processamento completo de novos leads com:
   - Validações de email e telefone brasileiro
   - Verificação de duplicatas
@@ -258,6 +258,7 @@ npm install
 - **MSW** para mock de APIs (quando implementado)  
 - **Foco em integração** - Fluxo completo Landing → Captura → IA → Conversão
 - **AI Testing**: Testes específicos para chatbot admin e validação de queries SQL
+- **Test Files**: `test-webhook-debug.js` e `test-webhook-final.js` - Utilitários de teste webhook
 
 ## Authentication & Setup
 

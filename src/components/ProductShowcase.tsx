@@ -40,7 +40,7 @@ export default function ProductShowcase({ onOpenModal }: ProductShowcaseProps) {
     : [];
 
   const handleVerCatalogoCompleto = () => {
-    navigate('/produtos');
+    navigate('/categorias');
   };
 
   if (isLoading) {

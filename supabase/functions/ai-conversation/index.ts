@@ -21,6 +21,11 @@ interface ConversationRequest {
     telefone?: string;
     email?: string;
   };
+  conversation_state?: {
+    stage: string;
+    sales_questions_count: number;
+    sales_questions_limit: number;
+  };
 }
 
 // Função para buscar TODOS os produtos reais cadastrados
@@ -116,8 +121,59 @@ function detectIntent(message: string): string[] {
   return intents;
 }
 
+// Função para detectar perguntas off-topic (fora do contexto AssisMax)
+function isOffTopicQuestion(message: string): boolean {
+  const lowerMessage = message.toLowerCase();
+  
+  // Tópicos permitidos (contexto AssisMax)
+  const allowedTopics = [
+    'preço', 'preco', 'valor', 'custa', 'quanto',
+    'produto', 'arroz', 'feijão', 'feijao', 'café', 'cafe', 'leite', 'óleo', 'oleo',
+    'atacado', 'atacarejo', 'comprar', 'vender', 'economia', 'desconto',
+    'entrega', 'entregar', 'frete', 'envio',
+    'pagamento', 'pagar', 'cartão', 'cartao', 'pix', 'dinheiro',
+    'horário', 'horario', 'funcionamento', 'abre', 'fecha',
+    'loja', 'endereço', 'endereco', 'onde', 'localização', 'localizacao',
+    'whatsapp', 'telefone', 'contato',
+    'quantidade', 'estoque', 'disponível', 'disponivel',
+    'qualidade', 'marca', 'categoria'
+  ];
+  
+  // Tópicos claramente off-topic
+  const offTopicKeywords = [
+    'política', 'politica', 'governo', 'eleição', 'eleicao',
+    'futebol', 'esporte', 'jogo', 'time',
+    'novela', 'filme', 'música', 'musica', 'cantor',
+    'saúde', 'saude', 'médico', 'medico', 'doença', 'doenca',
+    'receita', 'culinária', 'culinaria', 'cozinha',
+    'tempo', 'clima', 'chuva', 'sol',
+    'piada', 'história', 'historia', 'conte',
+    'amor', 'relacionamento', 'namoro',
+    'trabalho', 'emprego', 'carreira',
+    'estudo', 'escola', 'universidade'
+  ];
+  
+  // Se contém palavras permitidas, não é off-topic
+  const hasAllowedTopic = allowedTopics.some(topic => lowerMessage.includes(topic));
+  if (hasAllowedTopic) return false;
+  
+  // Se contém palavras claramente off-topic, é off-topic
+  const hasOffTopic = offTopicKeywords.some(keyword => lowerMessage.includes(keyword));
+  if (hasOffTopic) return true;
+  
+  // Se é uma pergunta muito genérica sem contexto específico
+  const genericQuestions = [
+    'como você está', 'como vai', 'tudo bem',
+    'que horas são', 'que dia é hoje',
+    'me fale sobre', 'conte-me sobre',
+    'qual sua opinião', 'o que você acha'
+  ];
+  
+  return genericQuestions.some(generic => lowerMessage.includes(generic));
+}
+
 // Função para determinar se deve coletar dados do usuário
-function shouldCollectData(conversation_history: ConversationMessage[], user_data: any): boolean {
+function shouldCollectData(conversation_history: ConversationMessage[], user_data: { nome?: string; telefone?: string; email?: string } | undefined): boolean {
   // Se já tem nome e telefone, não precisa coletar
   if (user_data?.nome && user_data?.telefone) return false;
   
@@ -168,7 +224,7 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { message, conversation_history, user_data } = await req.json() as ConversationRequest;
+    const { message, conversation_history, user_data, conversation_state } = await req.json() as ConversationRequest;
 
     // Detectar intenções na mensagem
     const intents = detectIntent(message);
@@ -179,8 +235,66 @@ Deno.serve(async (req: Request) => {
     // Buscar informações relevantes na base de conhecimento (EXCETO produtos)
     const knowledgeResults = await searchKnowledgeBase(message);
 
+    // Verificar se está no modo vendas
+    const isSalesMode = conversation_state?.stage === 'sales_mode';
+    
+    // Verificar se a pergunta é off-topic (apenas no modo vendas)
+    if (isSalesMode && isOffTopicQuestion(message)) {
+      return new Response(JSON.stringify({
+        success: true,
+        response: `Oi ${user_data?.nome || 'querida'}! 😊 Meu trabalho aqui é te ajudar com informações sobre nossos produtos e vantagens do atacarejo. Sobre outros assuntos, nossa equipe no WhatsApp pode te ajudar melhor! Que tal conhecer nossos preços especiais de ${produtosReais.length > 0 ? produtosReais[0].nome : 'atacado'}? 💰`,
+        intents: ['off_topic_redirect'],
+        produtos_reais_cadastrados: produtosReais.length,
+        next_actions: ['redirect_to_products'],
+        should_collect_data: false
+      }), {
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        }
+      });
+    }
+
     // Construir contexto da conversa
-    let systemPrompt = `Você é o Assis, proprietário da AssisMax Atacarejo em Valparaíso de Goiás.
+    let systemPrompt;
+    
+    if (isSalesMode) {
+      // Prompt especializado para modo vendas
+      systemPrompt = `Você é o Assis, dono da AssisMax Atacarejo em Valparaíso de Goiás.
+O cliente ${user_data?.nome} já demonstrou interesse e você agora é um VENDEDOR ACOLHEDOR focado em ajudar dona de casa.
+
+MODO VENDAS ATIVO:
+- Cliente já cadastrou interesse
+- Pergunta ${conversation_state?.sales_questions_count + 1} de ${conversation_state?.sales_questions_limit}
+- Seja vendedor gentil mas direto
+- Foque na ECONOMIA e VANTAGENS do atacarejo
+
+PRODUTOS REAIS DISPONÍVEIS (${produtosReais.length} produtos):
+${produtosReais.length > 0 ? produtosReais.map(produto => `
+🛒 ${produto.nome} (${produto.categoria})
+   ${produto.descricao || ''}
+   💰 Varejo: R$ ${produto.preco_varejo || 'Consulte'} | Atacado: R$ ${produto.preco_atacado || 'Consulte'}
+   📦 Temos ${produto.estoque || 0} unidades em estoque
+   💡 ECONOMIA: R$ ${(parseFloat(produto.preco_varejo || '0') - parseFloat(produto.preco_atacado || '0')).toFixed(2)} por unidade
+`).join('\n') : 'Produtos sendo atualizados no sistema'}
+
+REGRAS DO MODO VENDAS:
+1. APENAS responda sobre produtos AssisMax, preços, vantagens atacarejo
+2. Use DADOS REAIS dos produtos listados acima
+3. Destaque sempre a ECONOMIA (diferença varejo vs atacado)
+4. Tom: gentil, regional de Goiás, como vizinho prestativo
+5. Se pergunta 4: avisar "você tem mais uma pergunta!"
+6. Fale como vendedor experiente para dona de casa
+7. NUNCA invente produtos ou preços
+
+CONTEXTO ATUAL:
+- Cliente: ${user_data?.nome}
+- Pergunta atual: ${conversation_state?.sales_questions_count + 1}/${conversation_state?.sales_questions_limit}
+- Produtos disponíveis: ${produtosReais.length}
+- Foco: economia familiar comprando no atacarejo`;
+    } else {
+      // Prompt original para captura de dados
+      systemPrompt = `Você é o Assis, proprietário da AssisMax Atacarejo em Valparaíso de Goiás.
 
 PERSONALIDADE:
 - Acolhedor e próximo (dono do negócio)
@@ -215,14 +329,22 @@ CONTEXTO ATUAL:
 - Usuário: ${user_data?.nome || 'Visitante'}
 - Produtos reais cadastrados: ${produtosReais.length}
 - Intenções detectadas: ${intents.join(', ') || 'conversa geral'}`;
+    }
 
-    // Verificar se deve coletar dados
-    const needsDataCollection = shouldCollectData(conversation_history, user_data);
+    // Verificar se deve coletar dados (apenas se não estiver no modo vendas)
+    if (!isSalesMode) {
+      const needsDataCollection = shouldCollectData(conversation_history, user_data);
+      
+      if (needsDataCollection && !user_data?.nome) {
+        systemPrompt += '\n\nIMPORTANTE: O usuário mostrou interesse. Colete o NOME de forma natural na conversa.';
+      } else if (needsDataCollection && !user_data?.telefone) {
+        systemPrompt += '\n\nIMPORTANTE: Já temos o nome. Agora colete o TELEFONE/WhatsApp de forma natural.';
+      }
+    }
     
-    if (needsDataCollection && !user_data?.nome) {
-      systemPrompt += '\n\nIMPORTANTE: O usuário mostrou interesse. Colete o NOME de forma natural na conversa.';
-    } else if (needsDataCollection && !user_data?.telefone) {
-      systemPrompt += '\n\nIMPORTANTE: Já temos o nome. Agora colete o TELEFONE/WhatsApp de forma natural.';
+    // Aviso especial para a 4ª pergunta no modo vendas
+    if (isSalesMode && conversation_state?.sales_questions_count === 3) {
+      systemPrompt += '\n\n⚠️ AVISO ESPECIAL: Esta é a penúltima pergunta! Avise o cliente que ele tem MAIS UMA PERGUNTA após esta. Seja direto e útil.';
     }
 
     // Construir array de mensagens para DeepSeek
@@ -244,13 +366,26 @@ CONTEXTO ATUAL:
       nextActions.push('offer_human_contact');
     }
 
-    if (needsDataCollection) {
-      if (!user_data?.nome) {
-        nextActions.push('collect_name');
-      } else if (!user_data?.telefone) {
-        nextActions.push('collect_phone');
-      } else {
-        nextActions.push('send_to_webhook');
+    if (isSalesMode) {
+      // No modo vendas, apenas incrementar contador
+      nextActions.push('increment_sales_counter');
+      
+      // Se chegou ao limite, preparar para encerramento
+      if (conversation_state?.sales_questions_count >= conversation_state?.sales_questions_limit - 1) {
+        nextActions.push('prepare_sales_closing');
+      }
+    } else {
+      // Lógica original para captura de dados
+      const needsDataCollection = shouldCollectData(conversation_history, user_data);
+      
+      if (needsDataCollection) {
+        if (!user_data?.nome) {
+          nextActions.push('collect_name');
+        } else if (!user_data?.telefone) {
+          nextActions.push('collect_phone');
+        } else {
+          nextActions.push('send_to_webhook');
+        }
       }
     }
 
@@ -262,10 +397,17 @@ CONTEXTO ATUAL:
       produtos_nomes: produtosReais.map(p => p.nome),
       knowledge_used: knowledgeResults.length,
       next_actions: nextActions,
-      should_collect_data: needsDataCollection,
+      should_collect_data: isSalesMode ? false : shouldCollectData(conversation_history, user_data),
+      sales_mode: {
+        active: isSalesMode,
+        questions_count: conversation_state?.sales_questions_count || 0,
+        questions_limit: conversation_state?.sales_questions_limit || 5,
+        is_fourth_question: isSalesMode && conversation_state?.sales_questions_count === 3
+      },
       debug: {
         total_produtos_banco: produtosReais.length,
-        produtos_encontrados: produtosReais.map(p => `${p.nome} - R$ ${p.preco_atacado}`)
+        produtos_encontrados: produtosReais.map(p => `${p.nome} - R$ ${p.preco_atacado}`),
+        conversation_stage: conversation_state?.stage || 'unknown'
       }
     }), {
       headers: {

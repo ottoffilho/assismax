@@ -36,6 +36,7 @@ import { DonutChart } from '@/components/dashboard/charts/DonutChart';
 import { BarChart } from '@/components/dashboard/charts/BarChart';
 import { LineChart } from '@/components/dashboard/charts/LineChart';
 import AdminChatbotModal from '@/components/admin/AdminChatbotModal';
+import ConversasAnalyticsDashboard from '@/components/ConversasAnalyticsDashboard';
 
 export default function AdminDashboard() {
   const { metrics, isLoadingMetrics, metricsError } = useDashboard();
@@ -181,7 +182,7 @@ export default function AdminDashboard() {
           </div>
         </div>
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 bg-white shadow-soft">
+          <TabsList className="grid w-full grid-cols-6 bg-white shadow-soft">
             <TabsTrigger value="overview" className="data-[state=active]:bg-accent data-[state=active]:text-primary">
               <Activity className="w-4 h-4 mr-2" />
               Visão Geral
@@ -201,6 +202,10 @@ export default function AdminDashboard() {
             <TabsTrigger value="produtos" className="data-[state=active]:bg-accent data-[state=active]:text-primary">
               <Package className="w-4 h-4 mr-2" />
               Produtos
+            </TabsTrigger>
+            <TabsTrigger value="conversas" className="data-[state=active]:bg-accent data-[state=active]:text-primary">
+              <MessageSquare className="w-4 h-4 mr-2" />
+              Conversas IA
             </TabsTrigger>
           </TabsList>
 
@@ -464,6 +469,11 @@ export default function AdminDashboard() {
           {/* PRODUTOS */}
           <TabsContent value="produtos" className="space-y-6 animate-fade-in-up">
             <ProdutosManager />
+          </TabsContent>
+
+          {/* CONVERSAS IA */}
+          <TabsContent value="conversas" className="space-y-6 animate-fade-in-up">
+            <ConversasAnalyticsDashboard />
           </TabsContent>
         </Tabs>
       </div>

@@ -19,6 +19,7 @@ export default function ChatbotModal({ open, onOpenChange }: ChatbotModalProps) 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const conversationInitialized = useRef(false);
 
   const {
     messages,
@@ -32,11 +33,28 @@ export default function ChatbotModal({ open, onOpenChange }: ChatbotModalProps) 
 
   // Scroll automático quando novas mensagens aparecem
   useEffect(() => {
-    // Scroll suave para o final das mensagens
-    messagesEndRef.current?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'end'
-    });
+    const scrollToBottom = () => {
+      if (messagesEndRef.current) {
+        // Primeiro tenta com scrollIntoView
+        messagesEndRef.current.scrollIntoView({
+          behavior: 'smooth',
+          block: 'end'
+        });
+        
+        // Backup com scroll direto do container
+        if (scrollAreaRef.current) {
+          const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+          if (scrollContainer) {
+            scrollContainer.scrollTop = scrollContainer.scrollHeight;
+          }
+        }
+      }
+    };
+    
+    // Múltiplos timeouts para garantir o scroll
+    scrollToBottom();
+    setTimeout(scrollToBottom, 100);
+    setTimeout(scrollToBottom, 300);
   }, [messages, isTyping]);
 
   // Foca no input quando abre o modal
@@ -46,17 +64,24 @@ export default function ChatbotModal({ open, onOpenChange }: ChatbotModalProps) 
     }
   }, [open]);
 
-  // Reseta e inicia nova conversa sempre que o modal abre
+  // VERSÃO RADICAL: UMA ÚNICA EXECUÇÃO
   useEffect(() => {
-    if (open) {
-      // Sempre reseta a conversa quando abre o modal
+    if (open && !conversationInitialized.current) {
+      const timestamp = Date.now();
+      console.log(`🔥 [${timestamp}] RADICAL: Modal aberto - EXECUÇÃO ÚNICA`);
+      
+      // Marcar IMEDIATAMENTE
+      conversationInitialized.current = true;
+
+      // Reset e start síncronos
       resetConversation();
-      // Pequeno delay para garantir que o reset foi aplicado
-      setTimeout(() => {
-        startConversation();
-      }, 100);
+      startConversation();
+
+    } else if (!open) {
+      console.log(`🔥 [${Date.now()}] RADICAL: Modal fechado`);
+      conversationInitialized.current = false;
     }
-  }, [open, resetConversation, startConversation]);
+  }, [open]);
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim() || isTyping) return;
@@ -80,6 +105,27 @@ export default function ChatbotModal({ open, onOpenChange }: ChatbotModalProps) 
   const getPlaceholder = () => {
     if (isTyping) {
       return "Aguarde...";
+    }
+    
+    // Modo vendas
+    if (conversationState.stage === 'sales_mode') {
+      if (conversationState.sales_questions_count >= conversationState.sales_questions_limit) {
+        return "Aguarde transição...";
+      }
+      return "Pergunte sobre preços e produtos...";
+    }
+    
+    // Modo chat estendido
+    if (conversationState.stage === 'extended_chat') {
+      if (conversationState.extended_questions_count >= conversationState.extended_questions_limit) {
+        return "Conversa finalizada";
+      }
+      return "Faça qualquer pergunta sobre nosso negócio...";
+    }
+    
+    // Modo encerrado
+    if (conversationState.stage === 'closing') {
+      return "Conversa finalizada";
     }
     
     // Verifica se precisa de dados específicos
@@ -117,10 +163,28 @@ export default function ChatbotModal({ open, onOpenChange }: ChatbotModalProps) 
                 </span>
               </div>
               <div>
-                <DialogTitle className="text-primary-foreground font-semibold text-base">Assis - Dono da AssisMax</DialogTitle>
+                <DialogTitle className="text-primary-foreground font-semibold text-base">
+                  Assis - Dono da AssisMax
+                  {conversationState.stage === 'sales_mode' && (
+                    <span className="ml-2 text-xs bg-yellow-500 text-black px-2 py-1 rounded-full font-normal">
+                      Modo Vendas
+                    </span>
+                  )}
+                  {conversationState.stage === 'extended_chat' && (
+                    <span className="ml-2 text-xs bg-blue-500 text-white px-2 py-1 rounded-full font-normal">
+                      Chat Livre
+                    </span>
+                  )}
+                </DialogTitle>
                 <p className="text-xs text-primary-foreground/80 flex items-center gap-1">
-                  <span className="w-2 h-2 bg-success rounded-full"></span>
-                  Online agora • Responde rápido
+                  <span className={`w-2 h-2 rounded-full ${isTyping ? 'bg-yellow-400 animate-pulse' : 'bg-success'}`}></span>
+                  {conversationState.stage === 'sales_mode' ? (
+                    isTyping ? 'Consultando produtos...' : `Pergunta ${conversationState.sales_questions_count + 1} de ${conversationState.sales_questions_limit} • Preços especiais`
+                  ) : conversationState.stage === 'extended_chat' ? (
+                    isTyping ? 'Pensando na resposta...' : `Pergunta ${conversationState.extended_questions_count + 1} de ${conversationState.extended_questions_limit} • Chat livre com IA`
+                  ) : (
+                    isTyping ? 'Digitando...' : 'Online agora • Responde rápido'
+                  )}
                 </p>
               </div>
             </div>
@@ -130,8 +194,16 @@ export default function ChatbotModal({ open, onOpenChange }: ChatbotModalProps) 
                 size="icon"
                 className="h-8 w-8 text-primary-foreground hover:bg-primary-foreground/20 chatbot-button"
                 onClick={() => {
+                  const timestamp = Date.now();
+                  console.log(`🔄 [${timestamp}] FINAL: Botão refresh clicado`);
+                  
+                  // Reset síncrono sem timeout
+                  conversationInitialized.current = false;
                   resetConversation();
-                  setTimeout(() => startConversation(), 100);
+                  
+                  console.log(`🚀 [${timestamp}] FINAL: Executando start imediatamente após refresh`);
+                  conversationInitialized.current = true;
+                  startConversation();
                 }}
                 title="Nova conversa"
               >
@@ -151,7 +223,7 @@ export default function ChatbotModal({ open, onOpenChange }: ChatbotModalProps) 
         </DialogHeader>
 
         <>
-            <ScrollArea className="flex-1 p-4 bg-background chatbot-scroll" ref={scrollAreaRef}>
+            <ScrollArea className="flex-1 p-4 bg-background chatbot-scroll overflow-y-auto max-h-[400px]" ref={scrollAreaRef}>
               <div className="space-y-4">
                 {messages.map((message) => {
                   // Não renderiza mensagens vazias que não estão sendo digitadas
@@ -190,7 +262,7 @@ export default function ChatbotModal({ open, onOpenChange }: ChatbotModalProps) 
                 })}
                 {isTyping && (
                   <div className="flex justify-start animate-fade-in">
-                    <div className="w-8 h-8 rounded-full bg-white border border-border flex items-center justify-center mr-2 flex-shrink-0 p-1">
+                    <div className="w-8 h-8 rounded-full bg-white border border-border flex items-center justify-center mr-2 flex-shrink-0 p-1 animate-pulse">
                       <img
                         src={logoAssis}
                         alt="Assis"
@@ -198,11 +270,24 @@ export default function ChatbotModal({ open, onOpenChange }: ChatbotModalProps) 
                       />
                     </div>
                     <div className="bot-message rounded-2xl px-4 py-3 rounded-bl-sm">
-                      <div className="flex gap-1 items-center">
-                        <span className="w-2 h-2 bg-muted-foreground rounded-full typing-dot-1"></span>
-                        <span className="w-2 h-2 bg-muted-foreground rounded-full typing-dot-2"></span>
-                        <span className="w-2 h-2 bg-muted-foreground rounded-full typing-dot-3"></span>
-                      </div>
+                      {messages.some(msg => msg.isTyping && msg.content) ? (
+                        // Se há uma mensagem de "pensando", mostrar ela
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm">{messages.find(msg => msg.isTyping && msg.content)?.content}</p>
+                          <div className="flex gap-1 items-center ml-2">
+                            <span className="w-1.5 h-1.5 bg-accent rounded-full typing-dot-1"></span>
+                            <span className="w-1.5 h-1.5 bg-accent rounded-full typing-dot-2"></span>
+                            <span className="w-1.5 h-1.5 bg-accent rounded-full typing-dot-3"></span>
+                          </div>
+                        </div>
+                      ) : (
+                        // Fallback para animação padrão de digitação
+                        <div className="flex gap-1 items-center">
+                          <span className="w-2 h-2 bg-muted-foreground rounded-full typing-dot-1"></span>
+                          <span className="w-2 h-2 bg-muted-foreground rounded-full typing-dot-2"></span>
+                          <span className="w-2 h-2 bg-muted-foreground rounded-full typing-dot-3"></span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -221,18 +306,26 @@ export default function ChatbotModal({ open, onOpenChange }: ChatbotModalProps) 
                   placeholder={getPlaceholder()}
                   className="resize-none border-border bg-background text-foreground placeholder:text-muted-foreground focus:ring-accent focus:border-accent"
                   rows={1}
-                  disabled={isTyping}
+                  disabled={isTyping || conversationState.stage === 'closing' || (conversationState.stage === 'sales_mode' && conversationState.sales_questions_count >= conversationState.sales_questions_limit) || (conversationState.stage === 'extended_chat' && conversationState.extended_questions_count >= conversationState.extended_questions_limit)}
                 />
                 <Button
                   onClick={handleSendMessage}
-                  disabled={!inputMessage.trim() || isTyping}
+                  disabled={!inputMessage.trim() || isTyping || conversationState.stage === 'closing' || (conversationState.stage === 'sales_mode' && conversationState.sales_questions_count >= conversationState.sales_questions_limit) || (conversationState.stage === 'extended_chat' && conversationState.extended_questions_count >= conversationState.extended_questions_limit)}
                   className="px-3 bg-primary hover:bg-primary-hover text-primary-foreground shadow-soft chatbot-button disabled:opacity-50"
                 >
                   <Send className="h-4 w-4" />
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground mt-2 text-center">
-                Pressione Enter para enviar
+                {conversationState.stage === 'sales_mode' && conversationState.sales_questions_count < conversationState.sales_questions_limit ? (
+                  `${conversationState.sales_questions_limit - conversationState.sales_questions_count} pergunta(s) restante(s) • Pressione Enter`
+                ) : conversationState.stage === 'extended_chat' && conversationState.extended_questions_count < conversationState.extended_questions_limit ? (
+                  `${conversationState.extended_questions_limit - conversationState.extended_questions_count} pergunta(s) restante(s) • Chat livre com IA`
+                ) : conversationState.stage === 'closing' ? (
+                  'Conversa finalizada • Nossa equipe entrará em contato'
+                ) : (
+                  'Pressione Enter para enviar'
+                )}
               </p>
             </div>
         </>
