@@ -193,7 +193,12 @@ export default function Categorias() {
             Nossa equipe está pronta para te ajudar a encontrar os melhores produtos com os melhores preços.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button variant="accent" size="lg" className="gap-2">
+            <Button 
+              variant="accent" 
+              size="lg" 
+              className="gap-2"
+              onClick={() => window.open('https://wa.me/5561991597126', '_blank')}
+            >
               <Package className="w-5 h-5" />
               Falar com Vendedor
             </Button>
