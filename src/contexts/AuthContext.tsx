@@ -41,16 +41,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Buscar dados do funcionário usando função RPC segura
   const fetchFuncionario = useCallback(async (userId: string, userEmail?: string) => {
     try {
-      console.log('🔍 Buscando funcionário via RPC segura, email:', userEmail);
+      console.log('🔍 VERSÃO CORRIGIDA 2025 - Buscando funcionário via RPC segura, email:', userEmail);
+      console.log('🔍 UserID recebido:', userId);
 
       if (!userEmail) {
         throw new Error('Email não fornecido para busca de funcionário');
       }
 
       // Usar a função RPC que bypassa RLS para verificação de login
+      console.log('🔍 VERSÃO CORRIGIDA - Chamando RPC verify_user_login com email:', userEmail);
       const { data, error } = await supabase.rpc('verify_user_login', {
         email_param: userEmail
       });
+      console.log('📡 Resposta da RPC:', { data, error });
 
       if (error) {
         console.error('❌ Erro ao buscar funcionário:', error);
@@ -63,10 +66,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       const funcionarioData = data[0];
-      
+      console.log('📊 Dados brutos da RPC:', JSON.stringify(funcionarioData, null, 2));
+      console.log('🔍 funcionarioData.id:', funcionarioData.id);
+      console.log('🔍 funcionarioData.user_id:', funcionarioData.user_id);
+
       // Converter para formato completo do funcionário
+      // Usar o ID correto da tabela funcionarios
+      const idCorreto = funcionarioData.id;
+
+      console.log('✅ ID do funcionário:', funcionarioData.id);
+
       const funcionarioCompleto: Funcionario = {
-        id: funcionarioData.user_id, // Usando user_id como ID temporariamente
+        id: idCorreto, // Usar o ID correto da tabela funcionarios
         nome: funcionarioData.nome,
         email: userEmail,
         nivel_acesso: funcionarioData.nivel_acesso as 'admin' | 'funcionario',
@@ -74,7 +85,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user_id: funcionarioData.user_id
       };
 
-      console.log('✅ Funcionário encontrado:', funcionarioCompleto);
+      console.log('✅ Funcionário convertido:', JSON.stringify(funcionarioCompleto, null, 2));
+      console.log('🔑 ID que será usado:', funcionarioCompleto.id);
       setFuncionario(funcionarioCompleto);
       return funcionarioCompleto;
     } catch (error) {

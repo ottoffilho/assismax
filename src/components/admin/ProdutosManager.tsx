@@ -21,7 +21,7 @@ import {
   Save,
   X
 } from 'lucide-react';
-import { useProdutos, useCategorias } from '@/hooks/useProdutos';
+import { useProdutos, useCategorias, Produto } from '@/hooks/useProdutos';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
@@ -36,6 +36,11 @@ interface ProdutoForm {
   ativo: boolean;
 }
 
+interface CategoriaForm {
+  nome: string;
+  descricao: string;
+}
+
 const initialForm: ProdutoForm = {
   nome: '',
   categoria: '',
@@ -47,7 +52,7 @@ const initialForm: ProdutoForm = {
 };
 
 export function ProdutosManager() {
-  const { data: produtos = [], isLoading } = useProdutos();
+  const { data: produtos = [], isLoading } = useProdutos(undefined, true); // Incluir inativos para o admin
   const { data: categorias = [] } = useCategorias();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -55,9 +60,13 @@ export function ProdutosManager() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('todos');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<any>(null);
+  const [editingProduct, setEditingProduct] = useState<Produto | null>(null);
   const [form, setForm] = useState<ProdutoForm>(initialForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showNewCategoryForm, setShowNewCategoryForm] = useState(false);
+  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
+  const [categoryForm, setCategoryForm] = useState<CategoriaForm>({ nome: '', descricao: '' });
+  const [isSubmittingCategory, setIsSubmittingCategory] = useState(false);
 
   // Filtrar produtos
   const produtosFiltrados = produtos.filter(produto => {
@@ -70,7 +79,7 @@ export function ProdutosManager() {
     return matchesSearch && matchesCategory;
   });
 
-  const handleOpenDialog = (produto: any = null) => {
+  const handleOpenDialog = (produto: Produto | null = null) => {
     if (produto) {
       setEditingProduct(produto);
       setForm({
@@ -142,10 +151,10 @@ export function ProdutosManager() {
       queryClient.invalidateQueries({ queryKey: ['categorias'] });
       
       handleCloseDialog();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Erro ao salvar produto",
-        description: error.message || "Ocorreu um erro inesperado.",
+        description: error instanceof Error ? error.message : "Ocorreu um erro inesperado.",
         variant: "destructive",
       });
     } finally {
@@ -153,7 +162,7 @@ export function ProdutosManager() {
     }
   };
 
-  const handleStatusToggle = async (produto: any) => {
+  const handleStatusToggle = async (produto: Produto) => {
     try {
       const { error } = await supabase
         .from('produtos')
@@ -168,16 +177,16 @@ export function ProdutosManager() {
       });
 
       queryClient.invalidateQueries({ queryKey: ['produtos'] });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Erro ao alterar status",
-        description: error.message || "Ocorreu um erro inesperado.",
+        description: error instanceof Error ? error.message : "Ocorreu um erro inesperado.",
         variant: "destructive",
       });
     }
   };
 
-  const handleDelete = async (produto: any) => {
+  const handleDelete = async (produto: Produto) => {
     if (!confirm(`Tem certeza que deseja excluir o produto "${produto.nome}"?`)) {
       return;
     }
@@ -197,12 +206,70 @@ export function ProdutosManager() {
 
       queryClient.invalidateQueries({ queryKey: ['produtos'] });
       queryClient.invalidateQueries({ queryKey: ['categorias'] });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Erro ao excluir produto",
-        description: error.message || "Ocorreu um erro inesperado.",
+        description: error instanceof Error ? error.message : "Ocorreu um erro inesperado.",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleCategorySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmittingCategory(true);
+
+    try {
+      const categoryName = categoryForm.nome.trim();
+      
+      // Verificar se a categoria já existe
+      if (categorias.includes(categoryName)) {
+        toast({
+          title: "Categoria já existe",
+          description: `A categoria "${categoryName}" já foi cadastrada.`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Criar um produto temporário para registrar a categoria
+      // (Alternativa: criar uma tabela separada para categorias)
+      const { error } = await supabase
+        .from('produtos')
+        .insert([{
+          nome: `__CATEGORIA_TEMP_${Date.now()}__`,
+          categoria: categoryName,
+          descricao: categoryForm.descricao || null,
+          preco_atacado: 0,
+          estoque: 0,
+          ativo: false // Produto temporário inativo
+        }]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Categoria criada!",
+        description: `A categoria "${categoryName}" foi adicionada com sucesso.`,
+      });
+
+      // Refresh das categorias
+      queryClient.invalidateQueries({ queryKey: ['categorias'] });
+      
+      // Selecionar a nova categoria no formulário principal
+      setForm({ ...form, categoria: categoryName });
+      
+      // Fechar dialog e limpar form
+      setIsCategoryDialogOpen(false);
+      setCategoryForm({ nome: '', descricao: '' });
+      
+    } catch (error: unknown) {
+      toast({
+        title: "Erro ao criar categoria",
+        description: error instanceof Error ? error.message : "Ocorreu um erro inesperado.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmittingCategory(false);
     }
   };
 
@@ -264,13 +331,68 @@ export function ProdutosManager() {
 
                 <div className="space-y-2">
                   <Label htmlFor="categoria">Categoria *</Label>
-                  <Input
-                    id="categoria"
-                    value={form.categoria}
-                    onChange={(e) => setForm({ ...form, categoria: e.target.value })}
-                    placeholder="Ex: Cereais"
-                    required
-                  />
+                  {showNewCategoryForm ? (
+                    <div className="flex gap-2">
+                      <Input
+                        id="categoria"
+                        value={form.categoria}
+                        onChange={(e) => setForm({ ...form, categoria: e.target.value })}
+                        placeholder="Digite o nome da nova categoria"
+                        required
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setShowNewCategoryForm(false);
+                          setForm({ ...form, categoria: '' });
+                        }}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Select 
+                        value={form.categoria} 
+                        onValueChange={(value) => {
+                          if (value === '__nova_categoria__') {
+                            setShowNewCategoryForm(true);
+                            setForm({ ...form, categoria: '' });
+                          } else {
+                            setForm({ ...form, categoria: value });
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="flex-1">
+                          <SelectValue placeholder="Selecione uma categoria" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categorias.map(categoria => (
+                            <SelectItem key={categoria} value={categoria}>
+                              {categoria}
+                            </SelectItem>
+                          ))}
+                          <SelectItem value="__nova_categoria__">
+                            <span className="flex items-center gap-2">
+                              <Plus className="w-4 h-4" />
+                              Nova categoria
+                            </span>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsCategoryDialogOpen(true)}
+                        title="Gerenciar categorias"
+                      >
+                        <Filter className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -344,6 +466,73 @@ export function ProdutosManager() {
                 </Button>
                 <Button type="button" variant="outline" onClick={handleCloseDialog}>
                   <X className="w-4 h-4 mr-2" />
+                  Cancelar
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog para Gerenciar Categorias */}
+        <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Gerenciar Categorias</DialogTitle>
+              <DialogDescription>
+                Adicione uma nova categoria de produtos
+              </DialogDescription>
+            </DialogHeader>
+
+            <form onSubmit={handleCategorySubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="category-nome">Nome da Categoria *</Label>
+                <Input
+                  id="category-nome"
+                  value={categoryForm.nome}
+                  onChange={(e) => setCategoryForm({ ...categoryForm, nome: e.target.value })}
+                  placeholder="Ex: Cereais, Bebidas, Limpeza"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="category-descricao">Descrição</Label>
+                <Textarea
+                  id="category-descricao"
+                  value={categoryForm.descricao}
+                  onChange={(e) => setCategoryForm({ ...categoryForm, descricao: e.target.value })}
+                  placeholder="Descrição da categoria (opcional)"
+                  rows={2}
+                />
+              </div>
+
+              <div className="space-y-3">
+                <h4 className="font-medium text-sm">Categorias Existentes:</h4>
+                <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+                  {categorias.map(categoria => (
+                    <Badge key={categoria} variant="outline" className="text-xs">
+                      {categoria}
+                    </Badge>
+                  ))}
+                  {categorias.length === 0 && (
+                    <p className="text-sm text-muted-foreground">Nenhuma categoria cadastrada</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <Button type="submit" disabled={isSubmittingCategory}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  {isSubmittingCategory ? 'Adicionando...' : 'Adicionar'}
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => {
+                    setIsCategoryDialogOpen(false);
+                    setCategoryForm({ nome: '', descricao: '' });
+                  }}
+                >
                   Cancelar
                 </Button>
               </div>

@@ -26,6 +26,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '@/components/dashboard/layout/DashboardLayout';
 import { MetricCard } from '@/components/dashboard/cards/MetricCard';
 import { LeadsTable } from '@/components/dashboard/LeadsTable';
+import { AdminLeadsTable } from '@/components/admin/AdminLeadsTable';
 import { LeadsFilters } from '@/components/dashboard/LeadsFilters';
 import { FuncionariosManager } from '@/components/admin/FuncionariosManager';
 import { ProdutosManager } from '@/components/admin/ProdutosManager';
@@ -335,7 +336,7 @@ export default function AdminDashboard() {
                     ))}
                   </div>
                 ) : (
-                  <LeadsTable leads={simpleLeads || []} onRefresh={refetchLeads} />
+                  <AdminLeadsTable leads={simpleLeads || []} onRefresh={() => window.location.reload()} />
                 )}
               </CardContent>
             </Card>

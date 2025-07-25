@@ -14,7 +14,9 @@ import {
   Bot
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
+import { useAvailableLeads } from '@/hooks/useDashboard';
 import logoHorizontalDark from '@/assets/logo/logo-horizontal-dark.png';
 import logoDark from '@/assets/logo/logo-dark.png';
 import {
@@ -47,6 +49,7 @@ export function DashboardSidebar({ isCollapsed = false, onChatbotToggle }: Dashb
   const location = useLocation();
   const navigate = useNavigate();
   const { user, funcionario, signOut } = useAuth();
+  const { availableLeads } = useAvailableLeads();
   const [openItems, setOpenItems] = React.useState<string[]>([]);
 
   const isAdmin = funcionario?.nivel_acesso === 'admin' || funcionario?.nivel_acesso === 'OWNER';
@@ -85,6 +88,7 @@ export function DashboardSidebar({ isCollapsed = false, onChatbotToggle }: Dashb
       title: 'Novos Leads',
       onClick: () => navigate('/funcionarios?tab=novos-leads'),
       icon: <UserPlus className="w-5 h-5" />,
+      badge: availableLeads && availableLeads.length > 0 ? availableLeads.length.toString() : undefined,
     },
     {
       title: 'Performance',
@@ -218,9 +222,9 @@ export function DashboardSidebar({ isCollapsed = false, onChatbotToggle }: Dashb
           <>
             <span>{item.title}</span>
             {item.badge && (
-              <span className="ml-auto text-xs bg-accent text-primary px-2 py-1 rounded">
+              <Badge variant="default" className="ml-auto text-xs bg-blue-600 hover:bg-blue-700">
                 {item.badge}
-              </span>
+              </Badge>
             )}
           </>
         )}

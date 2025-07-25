@@ -42,7 +42,8 @@ import {
   Loader2,
   AlertCircle,
   CheckCircle,
-  XCircle
+  XCircle,
+  RefreshCw
 } from 'lucide-react';
 
 interface Funcionario {
@@ -74,14 +75,29 @@ export function FuncionariosManager() {
   const { data: funcionarios, isLoading, error } = useQuery({
     queryKey: ['funcionarios'],
     queryFn: async () => {
+      console.log('🔍 Buscando funcionários...');
+
+      // Verificar usuário autenticado
+      const { data: { user } } = await supabase.auth.getUser();
+      console.log('👤 Usuário autenticado:', user?.id, user?.email);
+
       const { data, error } = await supabase
         .from('funcionarios')
         .select('*')
         .order('created_at', { ascending: false });
-      
-      if (error) throw error;
+
+      console.log('📊 Resultado funcionários:', { data, error });
+
+      if (error) {
+        console.error('❌ Erro ao buscar funcionários:', error);
+        throw error;
+      }
+
+      console.log('✅ Funcionários encontrados:', data?.length || 0);
       return data as Funcionario[];
-    }
+    },
+    staleTime: 0, // Sempre buscar dados frescos
+    refetchOnMount: true, // Refetch quando componente monta
   });
 
   // Criar funcionário
@@ -241,13 +257,22 @@ export function FuncionariosManager() {
             Gerencie o acesso dos funcionários ao sistema
           </p>
         </div>
-        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => { resetForm(); }}>
-              <UserPlus className="w-4 h-4 mr-2" />
-              Novo Funcionário
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline"
+            onClick={() => queryClient.invalidateQueries({ queryKey: ['funcionarios'] })}
+            disabled={isLoading}
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            Atualizar
+          </Button>
+          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => { resetForm(); }}>
+                <UserPlus className="w-4 h-4 mr-2" />
+                Novo Funcionário
+              </Button>
+            </DialogTrigger>
           <DialogContent>
             <form onSubmit={handleSubmit}>
               <DialogHeader>
@@ -364,7 +389,8 @@ export function FuncionariosManager() {
               </DialogFooter>
             </form>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
       </div>
 
       {/* Lista de Funcionários */}

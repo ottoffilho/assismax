@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface DashboardMetrics {
@@ -258,38 +258,134 @@ export function useLeads(filters: LeadFilters = {}) {
 }
 
 export function useLeadActions() {
+  const queryClient = useQueryClient();
+
   const updateLeadStatus = async (leadId: string, status: string, observacoes?: string) => {
-    const { error } = await supabase
+    // Verificar autenticação
+    const { data: { user } } = await supabase.auth.getUser();
+    console.log('👤 Usuário autenticado:', user?.id, user?.email);
+    console.log('🔄 Hook updateLeadStatus chamado:', { leadId, status, observacoes });
+
+    const { error, data } = await supabase
       .from('leads')
-      .update({ 
-        status, 
+      .update({
+        status,
         observacoes,
         updated_at: new Date().toISOString()
       })
-      .eq('id', leadId);
+      .eq('id', leadId)
+      .select();
+
+    console.log('📊 Resultado da atualização:', { data, error });
 
     if (error) {
+      console.error('❌ Erro no Supabase:', error);
       throw error;
     }
+
+    console.log('✅ Lead atualizado, invalidando cache...');
+    // Invalidar cache para atualizar a UI
+    queryClient.invalidateQueries({ queryKey: ['leads'] });
+    queryClient.invalidateQueries({ queryKey: ['simple-leads'] });
+    queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] });
+    console.log('🔄 Cache invalidado');
   };
 
   const assignLeadToFuncionario = async (leadId: string, funcionarioId: string) => {
+    console.log('🔄 Atribuindo lead:', JSON.stringify({ leadId, funcionarioId }, null, 2));
+
+    // Verificar se o lead ainda está disponível (prevenção de conflitos)
+    const { data: currentLead, error: checkError } = await supabase
+      .from('leads')
+      .select('funcionario_id, status, nome')
+      .eq('id', leadId)
+      .single();
+
+    if (checkError) {
+      console.error('❌ Erro ao verificar disponibilidade do lead:', checkError);
+      throw checkError;
+    }
+
+    if (currentLead.funcionario_id !== null) {
+      console.warn('⚠️ Lead já foi atribuído a outro funcionário');
+      throw new Error('Este lead já foi atribuído a outro funcionário. Atualize a página para ver leads disponíveis.');
+    }
+
+    // Atribuir o lead
     const { error } = await supabase
       .from('leads')
-      .update({ 
+      .update({
         funcionario_id: funcionarioId,
         status: 'em_atendimento',
         updated_at: new Date().toISOString()
       })
-      .eq('id', leadId);
+      .eq('id', leadId)
+      .is('funcionario_id', null); // Condição extra para evitar conflitos
 
     if (error) {
+      console.error('❌ Erro ao atribuir lead:', JSON.stringify(error, null, 2));
       throw error;
     }
+
+    console.log('✅ Lead atribuído com sucesso:', currentLead.nome);
+
+    // Invalidar cache para atualizar a UI
+    queryClient.invalidateQueries({ queryKey: ['leads'] });
+    queryClient.invalidateQueries({ queryKey: ['available-leads'] });
+    queryClient.invalidateQueries({ queryKey: ['simple-leads'] });
+    queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] });
   };
 
   return {
     updateLeadStatus,
     assignLeadToFuncionario
+  };
+}
+
+export function useAvailableLeads() {
+  const { data: availableLeads, isLoading, error, refetch } = useQuery({
+    queryKey: ['available-leads'],
+    queryFn: async (): Promise<Lead[]> => {
+      console.log('🆕 Buscando leads disponíveis (funcionario_id IS NULL)');
+
+      const query = supabase
+        .from('leads')
+        .select(`
+          id,
+          nome,
+          telefone,
+          email,
+          origem,
+          status,
+          funcionario_id,
+          observacoes,
+          created_at,
+          updated_at,
+          funcionario:funcionarios(nome, email)
+        `)
+        .is('funcionario_id', null)
+        .in('status', ['novo', 'qualificado']) // Apenas leads que podem ser aceitos
+        .order('created_at', { ascending: true }); // Mais antigos primeiro
+
+      const { data, error } = await query.limit(50); // Limitar para performance
+
+      if (error) {
+        console.error('❌ Erro ao buscar leads disponíveis:', error);
+        throw error;
+      }
+
+      console.log('✅ Leads disponíveis encontrados:', data?.length || 0);
+      return data || [];
+    },
+    refetchInterval: 30 * 1000, // Atualizar a cada 30 segundos
+    retry: 3,
+    retryDelay: 1000,
+  });
+
+  return {
+    availableLeads,
+    isLoadingAvailable: isLoading,
+    availableError: error,
+    refetchAvailable: refetch
   };
 }

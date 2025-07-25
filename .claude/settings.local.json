@@ -41,7 +41,8 @@
       "Bash(ss:*)",
       "Bash(sudo apt:*)",
       "Bash(sudo apt install:*)",
-      "Bash(apt list:*)"
+      "Bash(apt list:*)",
+      "Bash(psql:*)"
     ],
     "deny": []
   }

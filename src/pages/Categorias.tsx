@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useCategorias } from '@/hooks/useProdutos';
+import logoHorizontalLight from '@/assets/logo/logo-horizontal-light.png';
 
 interface CategoriaInfo {
   nome: string;
@@ -73,9 +74,9 @@ export default function Categorias() {
                 onClick={handleVoltarHome}
                 className="flex items-center gap-3 hover:opacity-80 transition-opacity"
               >
-                <img 
-                  src="/src/assets/logo/logo-horizontal-light.png" 
-                  alt="ASSISMAX" 
+                <img
+                  src={logoHorizontalLight}
+                  alt="ASSISMAX"
                   className="h-12 md:h-14 lg:h-16 object-contain"
                 />
               </button>

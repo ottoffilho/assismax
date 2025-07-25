@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Auth - ASSISMAX</title>
+    <script>
+        async function clearEverything() {
+            // 1. Limpar storage
+            localStorage.clear();
+            sessionStorage.clear();
+            
+            // 2. Limpar cookies
+            document.cookie.split(";").forEach(function(c) { 
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+            });
+            
+            // 3. Limpar cache do navegador
+            if ('caches' in window) {
+                const cacheNames = await caches.keys();
+                await Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
+            }
+            
+            // 4. Invalidar service workers
+            if ('serviceWorker' in navigator) {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                await Promise.all(registrations.map(registration => registration.unregister()));
+            }
+            
+            console.log('✅ Tudo limpo! Redirecionando...');
+            
+            // 5. Hard reload
+            window.location.href = '/?timestamp=' + Date.now();
+        }
+        
+        // Executar automaticamente
+        clearEverything();
+    </script>
+</head>
+<body>
+    <h1>🧹 Limpando cache completo...</h1>
+    <p>Aguarde o redirecionamento automático.</p>
+</body>
+</html>

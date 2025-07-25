@@ -72,16 +72,19 @@ export function LeadsTable({ leads, onRefresh }: LeadsTableProps) {
 
   const handleStatusChange = async (leadId: string, newStatus: string) => {
     try {
+      console.log('🔄 Iniciando atualização de status:', { leadId, newStatus });
       await updateLeadStatus(leadId, newStatus);
+      console.log('✅ Status atualizado com sucesso');
       toast({
         title: 'Status atualizado!',
         description: 'O status do lead foi alterado com sucesso.',
       });
       onRefresh?.();
     } catch (error) {
+      console.error('❌ Erro ao atualizar status:', error);
       toast({
         title: 'Erro ao atualizar status',
-        description: 'Tente novamente em alguns instantes.',
+        description: error instanceof Error ? error.message : 'Tente novamente em alguns instantes.',
         variant: 'destructive',
       });
     }

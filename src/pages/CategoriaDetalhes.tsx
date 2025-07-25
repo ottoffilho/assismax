@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { useProdutos } from '@/hooks/useProdutos';
 import ChatbotModal from '@/components/ChatbotModal';
+import logoHorizontalLight from '@/assets/logo/logo-horizontal-light.png';
 
 export default function CategoriaDetalhes() {
   const { categoria } = useParams<{ categoria: string }>();
@@ -87,9 +88,9 @@ export default function CategoriaDetalhes() {
                 onClick={handleVoltarHome}
                 className="flex items-center gap-3 hover:opacity-80 transition-opacity"
               >
-                <img 
-                  src="/src/assets/logo/logo-horizontal-light.png" 
-                  alt="ASSISMAX" 
+                <img
+                  src={logoHorizontalLight}
+                  alt="ASSISMAX"
                   className="h-12 md:h-14 lg:h-16 object-contain"
                 />
               </button>

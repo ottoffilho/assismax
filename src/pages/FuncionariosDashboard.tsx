@@ -26,7 +26,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '@/components/dashboard/layout/DashboardLayout';
 import { MetricCard } from '@/components/dashboard/cards/MetricCard';
 import { LeadsTable } from '@/components/dashboard/LeadsTable';
-import { useLeads, useLeadActions } from '@/hooks/useDashboard';
+import { AvailableLeadsTable } from '@/components/dashboard/AvailableLeadsTable';
+import { useLeads, useLeadActions, useAvailableLeads } from '@/hooks/useDashboard';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { usePerformanceMetrics } from '@/hooks/usePerformanceMetrics';
@@ -48,8 +49,12 @@ export default function FuncionariosDashboard() {
   
   // Filtros baseados no funcionário autenticado
   const filters = funcionario ? { funcionario_id: funcionario.id } : {};
+
+  console.log('🔍 FILTRO - Funcionário ID:', funcionario?.id);
+  console.log('🔍 FILTRO - Filtros aplicados:', filters);
   
   const { leads, isLoadingLeads, refetchLeads } = useLeads(filters);
+  const { availableLeads, isLoadingAvailable, refetchAvailable } = useAvailableLeads();
   const { updateLeadStatus, assignLeadToFuncionario } = useLeadActions();
   const { toast } = useToast();
   const { metrics: performanceMetrics, isLoading: isLoadingPerformance } = usePerformanceMetrics();
@@ -66,7 +71,16 @@ export default function FuncionariosDashboard() {
 
   const handleAceitarLead = async (leadId: string) => {
     try {
-      await assignLeadToFuncionario(leadId, funcionario!.id);
+      console.log('🔍 DASHBOARD - Funcionário completo:', JSON.stringify(funcionario, null, 2));
+      console.log('🔍 DASHBOARD - ID que será usado:', funcionario!.id);
+      console.log('🔍 DASHBOARD - Email do funcionário:', funcionario!.email);
+
+      // Usar o ID correto da tabela funcionarios
+      const idCorreto = funcionario!.id;
+
+      console.log('🔧 DASHBOARD - ID final:', idCorreto);
+
+      await assignLeadToFuncionario(leadId, idCorreto);
       toast({
         title: 'Lead aceito!',
         description: 'O lead foi atribuído a você.',
@@ -236,7 +250,7 @@ export default function FuncionariosDashboard() {
           </TabsContent>
 
           {/* NOVOS LEADS */}
-          <TabsContent value="novos-leads" className="space-y-6">
+          <TabsContent value="novos-leads" className="space-y-6 animate-fade-in-up">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-bold">Novos Leads Disponíveis</h2>
@@ -244,23 +258,35 @@ export default function FuncionariosDashboard() {
                   Leads aguardando atendimento - aceite para atribuir a você
                 </p>
               </div>
+              <div className="flex items-center gap-3">
+                <Badge variant="outline" className="gap-1">
+                  <UserPlus className="w-3 h-3" />
+                  {availableLeads?.length || 0} disponíveis
+                </Badge>
+                <Button onClick={refetchAvailable} size="sm" variant="outline">
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Atualizar
+                </Button>
+              </div>
             </div>
 
             <Card>
               <CardHeader>
                 <CardTitle>Leads Não Atribuídos</CardTitle>
                 <CardDescription>
-                  Clique em "Aceitar Lead" para assumir o atendimento
+                  Clique em "Aceitar Lead" para assumir o atendimento e mover para seus leads
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8 text-muted-foreground">
-                  <UserCheck className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p className="text-lg font-medium">Funcionalidade em desenvolvimento</p>
-                  <p className="text-sm">
-                    Sistema de atribuição automática será implementado em breve
-                  </p>
-                </div>
+                <AvailableLeadsTable
+                  leads={availableLeads || []}
+                  isLoading={isLoadingAvailable}
+                  onAcceptLead={handleAceitarLead}
+                  onRefresh={() => {
+                    refetchAvailable();
+                    refetchLeads();
+                  }}
+                />
               </CardContent>
             </Card>
           </TabsContent>

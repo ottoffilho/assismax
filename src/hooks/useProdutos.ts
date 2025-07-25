@@ -4,16 +4,20 @@ import { Tables } from "@/integrations/supabase/types";
 
 export type Produto = Tables<"produtos">;
 
-export function useProdutos(categoria?: string) {
+export function useProdutos(categoria?: string, includeInactive = false) {
   return useQuery({
-    queryKey: ["produtos", categoria],
+    queryKey: ["produtos", categoria, includeInactive],
     queryFn: async () => {
       let query = supabase
         .from("produtos")
         .select("*")
-        .eq("ativo", true)
         .order("categoria", { ascending: true })
         .order("nome", { ascending: true });
+
+      // Para o admin, pode incluir inativos
+      if (!includeInactive) {
+        query = query.eq("ativo", true);
+      }
 
       if (categoria && categoria !== "todos") {
         query = query.eq("categoria", categoria);
@@ -22,7 +26,13 @@ export function useProdutos(categoria?: string) {
       const { data, error } = await query;
 
       if (error) throw error;
-      return data || [];
+      
+      // Filtrar produtos temporários de categoria
+      const filteredData = (data || []).filter(
+        produto => !produto.nome.startsWith('__CATEGORIA_TEMP_')
+      );
+      
+      return filteredData;
     },
     staleTime: 5 * 60 * 1000, // 5 minutos
   });
@@ -32,16 +42,21 @@ export function useCategorias() {
   return useQuery({
     queryKey: ["categorias"],
     queryFn: async () => {
+      // Buscar todas as categorias (incluindo de produtos inativos)
       const { data, error } = await supabase
         .from("produtos")
-        .select("categoria")
-        .eq("ativo", true);
+        .select("categoria");
 
       if (error) throw error;
 
-      // Extrair categorias únicas
-      const categorias = [...new Set(data?.map((p) => p.categoria) || [])];
-      return categorias.sort();
+      // Extrair categorias únicas, excluindo produtos temporários
+      const categorias = [...new Set(
+        data
+          ?.filter(p => !p.categoria?.startsWith('__CATEGORIA_TEMP_'))
+          ?.map((p) => p.categoria) || []
+      )];
+      
+      return categorias.filter(Boolean).sort();
     },
     staleTime: 10 * 60 * 1000, // 10 minutos
   });
